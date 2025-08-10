@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   FaInstagram,
   FaTwitter,
@@ -7,9 +8,8 @@ import {
   FaWhatsapp,
   FaEnvelope,
 } from "react-icons/fa";
-import { saveUserProfile } from "../features/userSlice"; // adjust path if needed
+import { saveUserProfile } from "../features/userSlice";
 
-// Master list of supported platforms
 const PLATFORMS = [
   { id: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourprofile", Icon: FaInstagram },
   { id: "twitter", label: "Twitter", placeholder: "https://twitter.com/yourprofile", Icon: FaTwitter },
@@ -18,36 +18,32 @@ const PLATFORMS = [
   { id: "gmail", label: "Gmail", placeholder: "your.email@gmail.com", Icon: FaEnvelope },
 ];
 
-function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
+function SelectedBioitems({ initialBioLinks = [], initialBio = "", onBack }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
-  const theme = useSelector((state) => state.auth.theme);
 
   const validPlatformIds = PLATFORMS.map((p) => p.id);
 
-  // ✅ Filter initialBioLinks so only valid platforms are used
+  const [bio, setBio] = useState(initialBio || "");
   const [selectedPlatforms, setSelectedPlatforms] = useState(
-    initialBioLinks
-      .map((link) => link.id)
-      .filter((id) => validPlatformIds.includes(id))
+    initialBioLinks.map((link) => link.id).filter((id) => validPlatformIds.includes(id))
   );
-
   const [bioLinks, setBioLinks] = useState(() => {
     const obj = {};
     initialBioLinks.forEach(({ id, url }) => {
-      if (validPlatformIds.includes(id)) {
-        obj[id] = url;
-      }
+      if (validPlatformIds.includes(id)) obj[id] = url;
     });
     return obj;
   });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const togglePlatform = (id) => {
     setSelectedPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
-
-    // Remove URL when unselected
     if (selectedPlatforms.includes(id)) {
       setBioLinks((prev) => {
         const copy = { ...prev };
@@ -61,14 +57,14 @@ function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
     setBioLinks((prev) => ({ ...prev, [platform]: url }));
   };
 
-  const canProceed = selectedPlatforms.some(
-    (p) => bioLinks[p] && bioLinks[p].trim() !== ""
-  );
+  const canProceed =
+    bio.trim() !== "" &&
+    selectedPlatforms.some((p) => bioLinks[p] && bioLinks[p].trim() !== "");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canProceed) {
-      alert("Please select at least one platform and enter URL/email.");
+      alert("Please enter a bio and at least one platform link.");
       return;
     }
 
@@ -76,21 +72,54 @@ function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
       .filter((id) => bioLinks[id]?.trim() !== "")
       .map((id) => ({ id, url: bioLinks[id].trim() }));
 
-    dispatch(
-      saveUserProfile({
-        uid: user?.uid,
-        bioLinks: bioLinksArray,
-      })
-    ).then(() => {
-      if (onDone) onDone();
-    });
+    try {
+      setLoading(true);
+      setError("");
+      await dispatch(
+        saveUserProfile({
+          uid: user?.uid,
+          bio: bio.trim(),
+          bioLinks: bioLinksArray,
+        })
+      ).unwrap(); // will throw if rejected
+
+      navigate("/app/bio"); // ✅ redirect on success
+    } catch (err) {
+      setError(err || "Failed to save profile. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div>
       <h2 className="mb-4 text-xl font-semibold text-white">
-        Choose your bio platforms
+        Set up your profile bio & links
       </h2>
+
+      {loading && (
+        <div className="mb-4 text-yellow-300 font-medium">
+          ⏳ Please wait, saving your profile...
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 text-red-400 font-medium">
+          ❌ {error}
+        </div>
+      )}
+
+      {/* Bio Field */}
+      <div className="mb-6">
+        <label className="block mb-1 text-white font-medium">Bio</label>
+        <textarea
+          placeholder="Write a short intro about yourself..."
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          rows={3}
+          className="bg-white/5 text-white p-3 rounded-lg w-full outline-none border border-transparent focus:border-rose-500 transition-colors"
+          required
+        />
+      </div>
 
       {/* Icon grid */}
       <div className="flex gap-4 flex-wrap mb-6">
@@ -116,10 +145,7 @@ function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {selectedPlatforms.map((platform) => {
           const match = PLATFORMS.find((p) => p.id === platform);
-
-          // ✅ Skip if platform not found in PLATFORMS
           if (!match) return null;
-
           const { placeholder, label } = match;
           return (
             <div key={platform}>
@@ -132,8 +158,7 @@ function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
                 value={bioLinks[platform] || ""}
                 autoComplete="on"
                 onChange={(e) => handleUrlChange(platform, e.target.value)}
-                className="bg-white/5 text-white p-3 rounded-lg w-full outline-none border border-transparent
-                focus:border-rose-500 transition-colors"
+                className="bg-white/5 text-white p-3 rounded-lg w-full outline-none border border-transparent focus:border-rose-500 transition-colors"
                 required
               />
             </div>
@@ -150,13 +175,14 @@ function SelectedBioitems({ initialBioLinks = [], onBack, onDone }) {
           </button>
           <button
             type="submit"
-            disabled={!canProceed}
-            className={`px-4 py-2 rounded text-white ${canProceed
+            disabled={!canProceed || loading}
+            className={`px-4 py-2 rounded text-white ${
+              canProceed && !loading
                 ? "bg-rose-600 hover:bg-rose-700"
                 : "bg-rose-400 cursor-not-allowed"
-              } transition`}
+            } transition`}
           >
-            Save Bio Links
+            {loading ? "Saving..." : "Save Profile"}
           </button>
         </div>
       </form>

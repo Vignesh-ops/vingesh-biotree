@@ -37,6 +37,7 @@ export const saveUserProfile = createAsyncThunk(
 const initialState = {
   theme: "basic",
   bioLinks: [],
+  bio:'',
   displayName: "",
   username: "",
   email: "",

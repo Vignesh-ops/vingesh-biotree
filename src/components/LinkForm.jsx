@@ -8,27 +8,32 @@ import InputField from "./UI/InputField";
 function LinkForm({ user }) {
   const dispatch = useDispatch();
   const [bioLinks, setBioLinks] = useState([]);
+  const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Fetch profile data
   useEffect(() => {
     if (!user?.uid) return;
 
-    const fetchLinks = async () => {
+    const fetchProfile = async () => {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
           const data = userSnap.data();
-          console.log("Fetched bioLinks:", data.bioLinks);
+          console.log("Fetched profile:", data);
 
+          // Bio
+          setBio(data.bio || "");
+
+          // Links
           if (Array.isArray(data.bioLinks)) {
-            // Match the structure from SelectedBioitems
-            const formatted = data.bioLinks.map(link => ({
-              key: link.id, // Using platformId as key
-              id: link.id,  // Platform ID (instagram, twitter, etc)
-              url: link.url // The actual URL
+            const formatted = data.bioLinks.map((link) => ({
+              key: link.id,
+              id: link.id,
+              url: link.url,
             }));
             setBioLinks(formatted);
           } else {
@@ -36,81 +41,81 @@ function LinkForm({ user }) {
           }
         }
       } catch (err) {
-        console.error("Error fetching links:", err);
-        setError("Failed to load links");
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLinks();
+    fetchProfile();
   }, [user?.uid]);
 
+  // Update links
   const handleFieldChange = (index, field, newValue) => {
-    setBioLinks(prev => {
+    setBioLinks((prev) => {
       const updated = [...prev];
       updated[index] = {
         ...updated[index],
-        [field]: newValue
+        [field]: newValue,
       };
       return updated;
     });
   };
 
+  // Add a new blank link
   const handleAddCustomField = () => {
-    setBioLinks(prev => [...prev, { 
-      key: `custom-${Date.now()}`, 
-      id: "", 
-      url: "" 
-    }]);
+    setBioLinks((prev) => [
+      ...prev,
+      { key: `custom-${Date.now()}`, id: "", url: "" },
+    ]);
   };
 
-  const saveUserProfile = async (uid, linksArr) => {
-    // Match the structure expected by SelectedBioitems
-    const formattedLinks = linksArr.map(link => ({
+  // Save to Firestore
+  const saveUserProfile = async (uid, linksArr, bioText) => {
+    const formattedLinks = linksArr.map((link) => ({
       id: link.id,
-      url: link.url
+      url: link.url,
     }));
 
     await setDoc(
-      doc(db, "users", uid), 
-      { bioLinks: formattedLinks }, 
+      doc(db, "users", uid),
+      {
+        bio: bioText,
+        bioLinks: formattedLinks,
+      },
       { merge: true }
     );
   };
 
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const validLinks = bioLinks.filter(link => 
-      link.id.trim() && link.url.trim()
+    const validLinks = bioLinks.filter(
+      (link) => link.id.trim() && link.url.trim()
     );
 
-    if (validLinks.length === 0) {
-      setError("Please add at least one valid link");
+    if (validLinks.length === 0 && !bio.trim()) {
+      setError("Please add at least a bio or one link");
       return;
     }
 
     try {
-      await saveUserProfile(user.uid, validLinks);
-      
-      // Dispatch to Redux if needed
-      validLinks.forEach(link => {
-        dispatch(addLink({ 
-          title: link.id, 
-          url: link.url 
-        }));
-      });
+      await saveUserProfile(user.uid, validLinks, bio);
 
+      validLinks.forEach((link) => {
+        dispatch(addLink({ title: link.id, url: link.url }));
+      });
     } catch (err) {
       console.error("Save failed:", err);
-      setError("Failed to save links");
+      setError("Failed to save profile");
     }
   };
 
   if (loading) {
-    return <div className="text-white p-4">Loading links...</div>;
+    return <div className="text-white p-4">Loading profile...</div>;
   }
 
   return (
@@ -118,14 +123,27 @@ function LinkForm({ user }) {
       onSubmit={handleSubmit}
       className="space-y-4 bg-gray-800 p-6 rounded-lg border border-gray-700"
     >
-      <h2 className="text-xl font-bold text-white mb-4">Edit Your Links</h2>
+      <h2 className="text-xl font-bold text-white mb-4">Edit Your Profile</h2>
 
       {error && (
-        <p className="text-red-400 bg-red-900/30 p-2 rounded">
-          {error}
-        </p>
+        <p className="text-red-400 bg-red-900/30 p-2 rounded">{error}</p>
       )}
 
+      {/* Bio Field */}
+      <div>
+        <label className="block text-white font-semibold mb-1">
+          Your Bio
+        </label>
+        <textarea
+          className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring focus:ring-blue-500"
+          placeholder="Tell something about yourself..."
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          rows={3}
+        ></textarea>
+      </div>
+
+      {/* Links */}
       {bioLinks.map((link, index) => (
         <div key={link.key || index} className="flex gap-3">
           <div className="flex-1">
@@ -156,7 +174,7 @@ function LinkForm({ user }) {
         >
           + Add Link
         </button>
-        
+
         <button
           type="submit"
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"

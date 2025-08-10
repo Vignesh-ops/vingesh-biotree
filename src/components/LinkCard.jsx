@@ -12,7 +12,7 @@ function LinkCard({ user }) {
         rel="noreferrer"
         className="text-blue-600 font-semibold hover:underline"
       >
-        {user.biotitle || "Untitled"}
+        {user.biotitle || user.displayName}
       </a>
       {user.photoURL && (
         <div className="w-12 h-12 rounded-full overflow-hidden">

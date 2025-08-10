@@ -7,6 +7,7 @@ import SelectedBioitems from '../components/SelectedBioitems';
 
 function UserSetupWizard() {
     const user = useSelector((state) => state.auth.user);
+    console.log('userwizard******',user)
     const [currentStep, setCurrentStep] = useState(1);
     const [userData, setUserData] = useState({
         username: '',
@@ -17,14 +18,25 @@ function UserSetupWizard() {
     // Initialize user data when user is loaded
     useEffect(() => {
         if (user) {
-            setUserData({
-                username: user.username || '',
-                biolinks: user.biolinks ? [...user.biolinks] : [],
-                theme: user.theme || '',
-            });
+          setUserData({
+            username: user.username || '',
+            biolinks: user.bioLinks ? [...user.bioLinks] : [],
+            theme: user.theme || '',
+            bio: user.bio || ''
+          });
         }
-        console.log('user', user)
-    }, [user]);
+      }, []); // runs once on mount
+      
+      useEffect(() => {
+        if (user) {
+          setUserData({
+            username: user.username || '',
+            biolinks: user.bioLinks ? [...user.bioLinks] : [],
+            theme: user.theme || '',
+            bio: user.bio || ''
+          });
+        }
+      }, [user]);
 
     // Determine current step based on completed fields
     useEffect(() => {
@@ -36,8 +48,8 @@ function UserSetupWizard() {
 
             setCurrentStep(2);
         } else if (!userData.biolinks || userData.biolinks.length === 0) {
-            console.log('step2')
-
+            console.log('step3')
+                        console.log('userData.biolinks',userData.biolinks)
             setCurrentStep(3);
         } else {
             console.log('step4')
