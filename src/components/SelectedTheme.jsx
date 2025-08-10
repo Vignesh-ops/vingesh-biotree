@@ -1,109 +1,163 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { saveUserProfile } from '../features/userSlice'; // adjust path
-import BasicTheme from '../components/Themes/BasicTheme'
-import BusinessTheme from '../components/Themes/BusinessTheme'
-import CreatorTheme from '../components/Themes/CreatorTheme'
-import DeveloperTheme from '../components/Themes/DeveloperTheme'
-import SingerTheme from '../components/Themes/SingerTheme'
-import SportsTheme from '../components/Themes/SportsTheme'
-const themes = {
-  creator: {
-    backgroundColor: '#ffecd1',
-    color: '#8a2be2',
-    fontFamily: "'Courier New', Courier, monospace",
-  },
-  basic: {
-    backgroundColor: '#ffffff',
-    color: '#333333',
-    fontFamily: "'Arial', sans-serif",
-  },
-  business: {
-    backgroundColor: '#f4f7f6',
-    color: '#004085',
-    fontFamily: "'Helvetica', sans-serif",
-  },
-  sports: {
-    backgroundColor: '#1b262c',
-    color: '#bbe1fa',
-    fontFamily: "'Impact', sans-serif",
-  },
-  singer: {
-    backgroundColor: '#fce4ec',
-    color: '#880e4f',
-    fontFamily: "'Georgia', serif",
-  },
-  developer: {
-    backgroundColor: '#000',
-    color: '#fff',
-    fontFamily: "'Georgia', serif",
-  },
+import { saveUserProfile } from '../features/userSlice';
+import BasicTheme from '../components/Themes/BasicTheme';
+import BusinessTheme from '../components/Themes/BusinessTheme';
+import CreatorTheme from '../components/Themes/CreatorTheme';
+import DeveloperTheme from '../components/Themes/DeveloperTheme';
+import SingerTheme from '../components/Themes/SingerTheme';
+import SportsTheme from '../components/Themes/SportsTheme';
+
+const THEMES = {
+    creator: {
+        name: 'Creator',
+        backgroundColor: '#ffecd1',
+        color: '#8a2be2',
+        fontFamily: "'Courier New', Courier, monospace",
+    },
+    basic: {
+        name: 'Basic',
+        backgroundColor: '#ffffff',
+        color: '#333333',
+        fontFamily: "'Arial', sans-serif",
+    },
+    business: {
+        name: 'Business',
+        backgroundColor: '#f4f7f6',
+        color: '#004085',
+        fontFamily: "'Helvetica', sans-serif",
+    },
+    sports: {
+        name: 'Sports',
+        backgroundColor: '#1b262c',
+        color: '#bbe1fa',
+        fontFamily: "'Impact', sans-serif",
+    },
+    singer: {
+        name: 'Singer',
+        backgroundColor: '#fce4ec',
+        color: '#880e4f',
+        fontFamily: "'Georgia', serif",
+    },
+    developer: {
+        name: 'Developer',
+        backgroundColor: '#000',
+        color: '#fff',
+        fontFamily: "'Georgia', serif",
+    },
 };
 
-function ThemeSelector({initialTheme}) {
-  const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth);
-  const userdata = user.user;
-console.log('user',userdata)
-  const saving = useSelector((state) => state.user.savingTheme);
-  const error = useSelector((state) => state.user.themeError);
+const ThemePreview = ({ themeKey, profile }) => {
+    switch (themeKey) {
+        case 'basic': return <BasicTheme profile={profile} />;
+        case 'creator': return <CreatorTheme profile={profile} />;
+        case 'business': return <BusinessTheme profile={profile} />;
+        case 'sports': return <SportsTheme profile={profile} />;
+        case 'singer': return <SingerTheme profile={profile} />;
+        case 'developer': return <DeveloperTheme profile={profile} />;
+        default: return <BasicTheme profile={profile} />;
+    }
+};
 
-  const [selectedTheme, setSelectedTheme] = useState(user.theme || 'basic');
+function SelectedTheme({ initialTheme = 'basic', onComplete, onBack }) {
+  console.log('onComplete',onComplete,onBack)
+    const dispatch = useDispatch();
+    const { user } = useSelector(state => state.auth);
+    const { savingTheme, themeError } = useSelector(state => state.user);
+    
+    const [selectedTheme, setSelectedTheme] = useState(initialTheme);
+    const [isSaving, setIsSaving] = useState(false);
 
-  const handleThemeChange = (newTheme) => {
-    setSelectedTheme(newTheme);
-    dispatch(saveUserProfile({ uid: user.user.uid, theme: newTheme }));
-  };
+    const handleThemeSelect = (theme) => {
+        setSelectedTheme(theme);
+    };
 
-  return (
-    <div>
-      <h2>Select Your Theme</h2>
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        {Object.keys(themes).map((themeKey) => (
-          <div
-            key={themeKey}
-            onClick={() => handleThemeChange(themeKey)}
-            style={{
-              cursor: 'pointer',
-              border: selectedTheme === themeKey ? '3px solid #4caf50' : '1px solid #ccc',
-              padding: '1rem',
-              borderRadius: '8px',
-              width: '120px',
-              ...themes[themeKey],
-            }}
-          >
-            <p style={{ margin: 0, fontWeight: 'bold' }}>
-              {themeKey.charAt(0).toUpperCase() + themeKey.slice(1)}
-            </p>
-            <p style={{ fontSize: '0.8rem' }}>Preview</p>
-          </div>
-        ))}
-      </div>
+    const handleContinue = async () => {
+        if (!selectedTheme) return;
+        if (typeof onComplete !== 'function') {
+          console.error('onComplete is not a function - check parent component');
+          return;
+      }
+        
+        try {
+            setIsSaving(true);
+            await dispatch(saveUserProfile({ 
+                uid: user.uid, 
+                theme: selectedTheme 
+            })).unwrap();
+            
+            onComplete(selectedTheme);
+        } catch (error) {
+            console.error("Failed to save theme:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
-      <div
-        style={{
-          marginTop: '2rem',
-          padding: '2rem',
-          borderRadius: '12px',
-          ...themes[selectedTheme],
-        }}
-      >
-        <h3>Live Preview.This is how your theme will look!</h3>
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold">Select Your Theme</h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(THEMES).map(([key, theme]) => (
+                    <div
+                        key={key}
+                        onClick={() => handleThemeSelect(key)}
+                        className={`p-4 rounded-lg cursor-pointer transition-all border-2 ${
+                            selectedTheme === key 
+                                ? 'border-green-500 scale-105' 
+                                : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        style={{
+                            backgroundColor: theme.backgroundColor,
+                            color: theme.color,
+                            fontFamily: theme.fontFamily,
+                        }}
+                    >
+                        <p className="font-bold">{theme.name}</p>
+                        <p className="text-sm">Preview</p>
+                    </div>
+                ))}
+            </div>
 
-        {selectedTheme == 'basic' && <BasicTheme profile={userdata} /> }
-        {selectedTheme == 'creator' && <CreatorTheme profile={userdata} /> }
-        {selectedTheme == 'business' && <BusinessTheme profile={userdata} /> }
-        {selectedTheme == 'sports' && <SportsTheme profile={userdata} /> }
-        {selectedTheme == 'singer' && <SingerTheme profile={userdata} /> }
-        {selectedTheme == 'developer' && <DeveloperTheme profile={userdata} /> }
+            <div 
+                className="p-6 rounded-xl mt-6"
+                style={{
+                    backgroundColor: THEMES[selectedTheme]?.backgroundColor,
+                    color: THEMES[selectedTheme]?.color,
+                    fontFamily: THEMES[selectedTheme]?.fontFamily,
+                }}
+            >
+                <h3 className="text-xl font-semibold mb-4">Live Preview</h3>
+                <ThemePreview themeKey={selectedTheme} profile={user} />
+            </div>
 
+            {isSaving && <p className="text-blue-500">Saving your theme...</p>}
+            {themeError && <p className="text-red-500">{themeError}</p>}
 
-      </div>
-
-      {saving && <p>Saving your theme...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
-  );
+            <div className="flex justify-between mt-6">
+                {onBack && (
+                    <button
+                        onClick={onBack}
+                        className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                    >
+                        Back
+                    </button>
+                )}
+                <button
+                    onClick={handleContinue}
+                    disabled={!selectedTheme || isSaving}
+                    className={`px-6 py-2 rounded-lg transition ${
+                        selectedTheme && !isSaving
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                >
+                    {isSaving ? 'Saving...' : 'Continue'}
+                </button>
+            </div>
+        </div>
+    );
 }
 
-export default ThemeSelector;
+export default SelectedTheme;

@@ -40,7 +40,7 @@ export default function PublicProfile() {
 
             // Get the first matching document
             const userDocSnap = snap.docs[0];
-            console.log(userDocSnap.id,'userDocSnap')
+            console.log(userDocSnap.id, 'userDocSnap')
             const userData = userDocSnap.data();
 
             // Store both the data and the UID (doc.id)
@@ -53,12 +53,12 @@ export default function PublicProfile() {
             const linksData = linksSnap.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-              }));
-            console.log('linksSnap',linksData)
+            }));
+            console.log('linksSnap', linksData)
 
             setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
             setLoading(false);
-            console.log('links*****',links)
+            console.log('links*****', links)
 
         };
 
@@ -84,15 +84,17 @@ export default function PublicProfile() {
     }
     switch (profile.theme) {
         case 'creator':
-          return <CreatorTheme profile={profile} links={links} />;
+            return <CreatorTheme profile={profile} links={links} />;
         case 'business':
-          return <BusinessTheme profile={profile} links={links} />;
+            return <BusinessTheme profile={profile} links={links} />;
         case 'sports':
-          return <SportsTheme profile={profile} links={links} />;
+            return <SportsTheme profile={profile} links={links} />;
         case 'singer':
-          return <SingerTheme profile={profile} links={links} />;
+            return <SingerTheme profile={profile} links={links} />;
         case 'basic':
+        case 'developer':
+            return <DeveloperTheme profile={profile} links={links} />;
         default:
-          return <BasicTheme profile={profile} links={links} />;
-      }
+            return <BasicTheme profile={profile} links={links} />;
+    }
 }

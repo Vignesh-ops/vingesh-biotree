@@ -34,9 +34,6 @@ function Dashboard() {
     }
   }, [checkingProfile, userLoading, linksLoading, user, navigate]);
 
-  const handleDelete = (id) => {
-    dispatch(deleteLink(id));
-  };
 
   if (checkingProfile || userLoading || linksLoading) {
     return <p className="text-center">Loading...</p>;
