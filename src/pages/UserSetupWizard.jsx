@@ -1,60 +1,99 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Setuserpath from '../components/Setuserpath';
-import SelectedTheme from '../components/SelectedTheme'; 
+import SelectedTheme from '../components/SelectedTheme';
 import { useSelector } from "react-redux";
-// import Dashboard from './Dashboard';
+import { Navigate } from 'react-router-dom';
+import SelectedBioitems from '../components/SelectedBioitems'
+
 function UserSetupWizard() {
+    console.log('hiiiii')
     const user = useSelector((s) => s.auth.user);
-console.log('user***',user)
-  const [step, setStep] = useState(1);
-  const [userData, setUserData] = useState({
-    username: user.username,
-    bio: user.title,
-    theme: user.theme
-  });
+    const [step, setStep] = useState(1);
+    const [userData, setUserData] = useState({
+        username: '',
+        biolinks: [],
+        theme: '',
+    });
 
-  if (!userData.username) setStep(1);
-  if (!userData.theme) setStep(2)
-    if (!userData.bio) setStep(3)
+    // Update userData when `user` from redux changes
+    useEffect(() => {
+        if (user) {
+          setUserData({
+            username: user.username || '',
+            biolinks: user.biolinks ? [...user.biolinks] : [],  // create new array copy so it's fresh
+            theme: user.theme || '',
+          });
+        }
+      }, [user]);
+      
+      
+    // Decide step based on missing fields once userData updates
+    useEffect(() => {
+        const newStep = !userData.username
+          ? 1
+          : !userData.theme
+          ? 2
+          : (userData.biolinks && userData.biolinks.length > 0)
+          ? 3
+          : 4;
+      
+        if (newStep !== step) {
+          setStep(newStep);
+        }
+      }, [userData, step]);
+      
+    const nextStep = () => setStep((prev) => prev + 1);
+    const prevStep = () => setStep((prev) => (prev > 1 ? prev - 1 : prev));
 
+    const updateUserData = (field, value) => {
+        setUserData((prev) => ({ ...prev, [field]: value }));
+    };
 
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => (prev > 1 ? prev - 1 : prev));
+    // If all steps done, redirect to dashboard or bio page
+    if (step === 4) {
+        return <Navigate to="/app/bio" replace />;
+    }
 
-  // Handlers to update data from each step
-  const updateUserData = (field, value) => {
-    setUserData((prev) => ({ ...prev, [field]: value }));
-  };
+    if (!user) {
+        return <div>Loading user data...</div>; // Optional loading UI while user is fetched
+    }
 
-  return (
-    <div>
-      {step === 1 && (
-        <Setuserpath
-          initialUsername={userData.username}
-          onUsernameSet={(username) => {
-            updateUserData('username', username);
-            nextStep();
-          }}
-        />
-      )}
-    
-      {step === 2 && (
-        <SelectedTheme
-          initialTheme={userData.theme}
-          onThemeSet={(theme) => {
-            updateUserData('theme', theme);
-            // Final step - you can now save all userData or redirect
-            console.log('User setup complete', { ...userData, theme });
-            // e.g., redirect to dashboard or show success
-          }}
-          onBack={prevStep}
-        />
-      )}
-        {step === 3 && (
-         <Navigate to='/app/bio' />
-      )}
-    </div>
-  );
+    return (
+        <div>
+            {step === 1 && (
+                <Setuserpath
+                    initialUsername={userData.username}
+                    onUsernameSet={(username) => {
+                        updateUserData('username', username);
+                        nextStep();
+                    }} user={user}
+                />
+            )}
+
+            {step === 2 && (
+                <SelectedTheme
+                    initialTheme={userData.theme}
+                    onThemeSet={(theme) => {
+                        updateUserData('theme', theme);
+                        nextStep();
+                    }}
+                    onBack={prevStep}
+                />
+            )}
+
+            {step === 3 && (
+                <SelectedBioitems
+                    initialBioLinks={userData.biolinks || {}}
+                    onBioLinksSet={(bioLinks) => {
+                        updateUserData('bioLinks', bioLinks);
+                        nextStep();
+                    }}
+                    onBack={prevStep}
+                />
+            )}
+
+        </div>
+    );
 }
 
 export default UserSetupWizard;

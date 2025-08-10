@@ -1,4 +1,6 @@
 export default function SportsTheme({ profile, links }) {
+  const Links = profile.bioLinks
+
     return (
       <div
         className="min-h-screen p-6 bg-gradient-to-r from-green-800 via-green-600 to-green-400 text-white font-sans flex flex-col items-center"
@@ -20,15 +22,15 @@ export default function SportsTheme({ profile, links }) {
         <p className="max-w-xl mt-2 text-yellow-100 italic drop-shadow-md">{profile.bio}</p>
   
         <div className="mt-8 w-full max-w-md space-y-3">
-          {links.map((link) => (
+        {Links.map((link,index) => (
             <a
-              key={link.id}
-              href={link.url}
+              key={index}
+              href={link.value.url}
               target="_blank"
               rel="noreferrer"
               className="block bg-yellow-400 bg-opacity-80 rounded-md py-3 px-6 font-bold text-green-900 hover:bg-opacity-100 transition"
             >
-              {link.title}
+              {link.value.id}
             </a>
           ))}
         </div>

@@ -1,63 +1,83 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase'; // adjust path
+// src/features/userSlice.js
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
-
-export const saveTheme = createAsyncThunk(
-  'user/saveTheme',
-  async ({ uid, theme }, thunkAPI) => {
+// Fetch profile from Firestore
+export const fetchUserProfile = createAsyncThunk(
+  "user/fetchUserProfile",
+  async (uid, thunkAPI) => {
     try {
-      await setDoc(doc(db, 'users', uid), { theme }, { merge: true });
-      return theme; // return theme so it can be saved in redux
+      if (!uid) throw new Error("User ID is missing!");
+      const snap = await getDoc(doc(db, "users", uid));
+      if (snap.exists()) {
+        return snap.data();
+      } else {
+        return {}; // no profile yet
+      }
     } catch (error) {
       return thunkAPI.rejectWithValue(error.message);
     }
   }
 );
 
+export const saveUserProfile = createAsyncThunk(
+  "user/saveUserProfile",
+  async ({ uid, ...updates }, { getState }) => {
+    if (!uid) throw new Error("Missing user UID");
+    console.log(updates, 'updates')
+    const docRef = doc(db, "users", uid);
+    await updateDoc(docRef, updates); // partial update
+
+    // Merge into local Redux store
+    return updates;
+  }
+);
+
 const initialState = {
-  uid: null,
-  email: null,
-  displayName: null,
-  photoURL: null,
-  username: null,
-  bio: null,
-  theme: 'basic', // default theme
-  // ... other fields
+  theme: "basic",
+  bioLinks: [],
+  displayName: "",
+  username: "",
+  email: "",
+  photoURL: "",
+  createdAt: null,
+  status: "idle",
+  error: null,
 };
 
 const userSlice = createSlice({
-  name: 'user',
+  name: "user",
   initialState,
   reducers: {
-    setUser(state, action) {
-      return { ...state, ...action.payload };
-    },
-    clearUser(state) {
-      return initialState;
-    },
-    setTheme(state, action) {
-      state.theme = action.payload;
-    },
+    clearUserProfile: () => initialState,
   },
   extraReducers: (builder) => {
     builder
-      .addCase(saveTheme.pending, (state) => {
-        state.savingTheme = true;
-        state.themeError = null;
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.status = "loading";
       })
-      .addCase(saveTheme.fulfilled, (state, action) => {
-        state.savingTheme = false;
-        state.theme = action.payload;
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        return { ...state, ...action.payload };
       })
-      .addCase(saveTheme.rejected, (state, action) => {
-        state.savingTheme = false;
-        state.themeError = action.payload;
+      .addCase(fetchUserProfile.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+      .addCase(saveUserProfile.fulfilled, (state, action) => {
+        if (!state.profile) state.profile = {};
+        state.profile = {
+          ...state.profile,
+          ...action.payload,
+        };
+      })
+      .addCase(saveUserProfile.rejected, (state, action) => {
+        state.error = action.payload
+        console.log(action, 'error')
       });
   },
 });
 
-export const { setUser, clearUser, setTheme } = userSlice.actions;
+export const { clearUserProfile } = userSlice.actions;
 export default userSlice.reducer;
-

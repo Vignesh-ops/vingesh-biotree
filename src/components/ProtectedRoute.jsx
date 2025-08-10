@@ -10,9 +10,6 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!user.username) {
-    return <Navigate to="/app/setup" replace />;
-  }
 
   return children;
 }

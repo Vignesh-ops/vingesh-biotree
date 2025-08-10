@@ -7,8 +7,9 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { fetchUserProfile, clearUserProfile } from "./userSlice";
 
-// sign in with Google (popup)
+// Sign in with Google
 export const signInWithGoogle = createAsyncThunk(
   "auth/signInWithGoogle",
   async (_, thunkAPI) => {
@@ -17,11 +18,10 @@ export const signInWithGoogle = createAsyncThunk(
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
 
-      // ensure user doc exists in Firestore (users/{uid})
+      // Ensure user doc exists
       const userRef = doc(db, "users", fbUser.uid);
       const userSnap = await getDoc(userRef);
       if (!userSnap.exists()) {
-        // create a sensible default username (can be changed later)
         const raw = (fbUser.displayName || fbUser.email || "user").toLowerCase();
         const username = raw.replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
         await setDoc(userRef, {
@@ -29,13 +29,16 @@ export const signInWithGoogle = createAsyncThunk(
           displayName: fbUser.displayName || "",
           email: fbUser.email || "",
           photoURL: fbUser.photoURL || "",
-          username: username,
-          bio: "",
+          username,
+          bioLinks: [],
+          theme: "basic",
           createdAt: serverTimestamp(),
         });
       }
 
-      // return basic fb user info (we'll fetch user doc separately if needed)
+      // Fetch profile right after login
+      thunkAPI.dispatch(fetchUserProfile(fbUser.uid));
+
       return {
         uid: fbUser.uid,
         displayName: fbUser.displayName,
@@ -48,12 +51,13 @@ export const signInWithGoogle = createAsyncThunk(
   }
 );
 
-// sign out
+// Sign out
 export const signOutUser = createAsyncThunk(
   "auth/signOutUser",
   async (_, thunkAPI) => {
     try {
       await firebaseSignOut(auth);
+      thunkAPI.dispatch(clearUserProfile());
       return true;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message);
@@ -64,12 +68,11 @@ export const signOutUser = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: null, // { uid, displayName, email, photoURL, username?, bio? }
+    user: null, // { uid, displayName, email, photoURL }
     status: "idle",
     error: null,
   },
   reducers: {
-    // used by onAuthStateChanged to sync instantly
     setUser(state, action) {
       state.user = action.payload;
       state.status = "succeeded";
@@ -84,20 +87,15 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(signInWithGoogle.pending, (state) => {
-        console.log('loading')
         state.status = "loading";
       })
       .addCase(signInWithGoogle.fulfilled, (state, action) => {
         state.status = "succeeded";
-        console.log('action',action)
-        // basic info set, we will enrich via onAuthStateChanged fetch
-        state.user = { ...action.payload };
+        state.user = action.payload;
       })
       .addCase(signInWithGoogle.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
-        console.log('error',action)
-
       })
       .addCase(signOutUser.fulfilled, (state) => {
         state.user = null;

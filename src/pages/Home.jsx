@@ -1,6 +1,6 @@
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-
+import { Link } from "react-router-dom";
 function Home() {
   return (
     <div>
@@ -12,12 +12,12 @@ function Home() {
         <p className="mt-4 text-gray-600">
           Create your personal bio link page and share all your content in one place.
         </p>
-        <a
-          href="/app/bio"
+        <Link
+          to="/app/bio"
           className="mt-6 inline-block bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-purple-700 transition"
-        >
+        > 
           Get Started
-        </a>
+        </Link>
       </section>
       <Footer />
     </div>

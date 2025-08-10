@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { saveTheme } from '../features/userSlice'; // adjust path
-
+import { saveUserProfile } from '../features/userSlice'; // adjust path
+import BasicTheme from '../components/Themes/BasicTheme'
+import BusinessTheme from '../components/Themes/BusinessTheme'
+import CreatorTheme from '../components/Themes/CreatorTheme'
+import DeveloperTheme from '../components/Themes/DeveloperTheme'
+import SingerTheme from '../components/Themes/SingerTheme'
+import SportsTheme from '../components/Themes/SportsTheme'
 const themes = {
   creator: {
     backgroundColor: '#ffecd1',
@@ -28,11 +33,18 @@ const themes = {
     color: '#880e4f',
     fontFamily: "'Georgia', serif",
   },
+  developer: {
+    backgroundColor: '#000',
+    color: '#fff',
+    fontFamily: "'Georgia', serif",
+  },
 };
 
-function ThemeSelector({initialTheme,}) {
+function ThemeSelector({initialTheme}) {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.user);
+  const user = useSelector((state) => state.auth);
+  const userdata = user.user;
+console.log('user',userdata)
   const saving = useSelector((state) => state.user.savingTheme);
   const error = useSelector((state) => state.user.themeError);
 
@@ -40,7 +52,7 @@ function ThemeSelector({initialTheme,}) {
 
   const handleThemeChange = (newTheme) => {
     setSelectedTheme(newTheme);
-    dispatch(saveTheme({ uid: user.uid, theme: newTheme }));
+    dispatch(saveUserProfile({ uid: user.user.uid, theme: newTheme }));
   };
 
   return (
@@ -76,8 +88,16 @@ function ThemeSelector({initialTheme,}) {
           ...themes[selectedTheme],
         }}
       >
-        <h3>Live Preview</h3>
-        <p>This is how your theme will look!</p>
+        <h3>Live Preview.This is how your theme will look!</h3>
+
+        {selectedTheme == 'basic' && <BasicTheme profile={userdata} /> }
+        {selectedTheme == 'creator' && <CreatorTheme profile={userdata} /> }
+        {selectedTheme == 'business' && <BusinessTheme profile={userdata} /> }
+        {selectedTheme == 'sports' && <SportsTheme profile={userdata} /> }
+        {selectedTheme == 'singer' && <SingerTheme profile={userdata} /> }
+        {selectedTheme == 'developer' && <DeveloperTheme profile={userdata} /> }
+
+
       </div>
 
       {saving && <p>Saving your theme...</p>}

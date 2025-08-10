@@ -12,7 +12,7 @@ export default function Login() {
   const status = useSelector((state) => state.auth.status);
 
   useEffect(() => {
-    if (user) navigate("/app/bio");
+    if (user) navigate("/");
   }, [user, navigate]);
 
   const handleGoogle = () => {

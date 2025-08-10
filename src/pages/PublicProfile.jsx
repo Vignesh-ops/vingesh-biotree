@@ -9,6 +9,12 @@ import {
     getDocs,
     getDocs as getDocsFromCollection,
 } from "firebase/firestore";
+import BasicTheme from '../components/Themes/BasicTheme'
+import BusinessTheme from '../components/Themes/BusinessTheme'
+import CreatorTheme from '../components/Themes/CreatorTheme'
+import DeveloperTheme from '../components/Themes/DeveloperTheme'
+import SingerTheme from '../components/Themes/SingerTheme'
+import SportsTheme from '../components/Themes/SportsTheme'
 
 export default function PublicProfile() {
     const { username } = useParams();
@@ -34,6 +40,7 @@ export default function PublicProfile() {
 
             // Get the first matching document
             const userDocSnap = snap.docs[0];
+            console.log(userDocSnap.id,'userDocSnap')
             const userData = userDocSnap.data();
 
             // Store both the data and the UID (doc.id)
@@ -41,11 +48,18 @@ export default function PublicProfile() {
 
             // Fetch links subcollection using doc.id instead of userData.uid
             const linksSnap = await getDocsFromCollection(
-                collection(db, "users", userDocSnap.id, "links")
+                collection(db, "users", userDocSnap.id, "bioLinks")
             );
+            const linksData = linksSnap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              }));
+            console.log('linksSnap',linksData)
 
             setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
             setLoading(false);
+            console.log('links*****',links)
+
         };
 
         load();

@@ -1,4 +1,8 @@
 export default function BasicTheme({ profile, links }) {
+
+  const Links = profile.bioLinks
+  console.log("****",Links)
+
     return (
       <div className="min-h-screen p-8 bg-gray-50 text-gray-900 flex flex-col items-center font-sans">
         <img
@@ -10,15 +14,15 @@ export default function BasicTheme({ profile, links }) {
         <p className="mt-2 max-w-lg text-center text-gray-700">{profile.bio}</p>
   
         <div className="mt-8 w-full max-w-md space-y-3">
-          {links.map((link) => (
+          {Links.map((link,index) => (
             <a
-              key={link.id}
-              href={link.url}
+              key={index}
+              href={link.value.url}
               target="_blank"
               rel="noreferrer"
               className="block bg-white shadow-md rounded-md py-3 px-6 text-center font-medium hover:bg-gray-100 transition"
             >
-              {link.title}
+              {link.value.id}
             </a>
           ))}
         </div>

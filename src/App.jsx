@@ -61,7 +61,7 @@ function App() {
         </Route>
 
         {/* public profile */}
-        <Route path="/:username([a-zA-Z0-9_-]+)" element={<PublicProfile />} />
+        <Route path="/:username" element={<PublicProfile />} />
       </Routes>
     </Router>
   );

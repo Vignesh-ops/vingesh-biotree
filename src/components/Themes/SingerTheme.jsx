@@ -1,4 +1,6 @@
 export default function SingerTheme({ profile, links }) {
+  const Links = profile.bioLinks
+
     return (
       <div
         className="min-h-screen p-6 bg-gradient-to-tr from-pink-400 via-red-300 to-purple-700 text-white font-serif flex flex-col items-center"
@@ -20,15 +22,15 @@ export default function SingerTheme({ profile, links }) {
         <p className="max-w-xl mt-2 text-white italic drop-shadow-md">{profile.bio}</p>
   
         <div className="mt-8 w-full max-w-md space-y-3">
-          {links.map((link) => (
+        {Links.map((link,index) => (
             <a
-              key={link.id}
-              href={link.url}
+              key={index}
+              href={link.value.url}
               target="_blank"
               rel="noreferrer"
               className="block bg-black bg-opacity-40 rounded-md py-3 px-6 font-semibold text-white hover:bg-opacity-70 transition"
             >
-              {link.title}
+              {link.value.id}
             </a>
           ))}
         </div>

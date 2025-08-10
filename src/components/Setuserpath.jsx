@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore"; 
+import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from '../firebase'; // adjust this path as per your setup
 
 function Setuserpath({ email, onUsernameSet, user }) {
@@ -66,7 +66,7 @@ function Setuserpath({ email, onUsernameSet, user }) {
           className="bg-white/5 text-white p-3 rounded-lg w-full"
           autoComplete="off"
         />
-        <button type="submit">Set Username</button>
+        <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-4 py-3 rounded-lg w-full shadow-md" type="submit">Set Username</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>

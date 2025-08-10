@@ -1,4 +1,6 @@
 export default function DeveloperTheme({ profile, links }) {
+  const Links = profile.bioLinks
+
     return (
       <div
         className="min-h-screen p-8 bg-gray-900 text-green-400 font-mono flex flex-col items-center"
@@ -22,10 +24,10 @@ export default function DeveloperTheme({ profile, links }) {
           <p className="text-green-300 italic text-center mb-6">{profile.bio}</p>
   
           <div className="space-y-3">
-            {links.map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
+          {Links.map((link,index) => (
+            <a
+              key={index}
+              href={link.value.url}
                 target="_blank"
                 rel="noreferrer"
                 className="block bg-green-900 hover:bg-green-700 text-green-300 py-3 px-5 rounded font-semibold transition duration-200"
@@ -33,7 +35,7 @@ export default function DeveloperTheme({ profile, links }) {
                   fontFamily: "'Fira Code', monospace" 
                 }}
               >
-                {link.title}
+                {link.value.id}
               </a>
             ))}
           </div>
