@@ -17,8 +17,8 @@ export default function SportsTheme({ profile }) {
   const displayLinks =
     Links.length > 0
       ? Links.map((link) => ({
-          id: link?.value?.id || "Untitled Game",
-          url: link?.value?.url || "#",
+          id: link?.id || "Untitled Game",
+          url: link?.url || "#",
         }))
       : [];
 

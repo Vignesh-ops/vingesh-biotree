@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from '../firebase'; // adjust this path as per your setup
 
-function Setuserpath({ email, onUsernameSet, user }) {
+function Setuserpath({ email, onComplete, user }) {
   const [username, setUsername] = useState("");
   const [error, setError] = useState('');
 
@@ -46,7 +46,7 @@ function Setuserpath({ email, onUsernameSet, user }) {
     // Save username for this user
     try {
       await saveUserProfile(user.uid, username);
-      onUsernameSet(username); // callback to parent component
+      onComplete(username); // callback to parent component
     } catch (err) {
       setError("Failed to save username. Please try again.");
       console.error(err);

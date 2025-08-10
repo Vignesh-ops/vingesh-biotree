@@ -11,8 +11,8 @@ export default function BasicTheme({ profile }) {
 
   const displayLinks = Links.length > 0
     ? Links.map(link => ({
-        id: link?.value?.id || "Untitled",
-        url: link?.value?.url || "#",
+        id: link?.id || "Untitled",
+        url: link?.url || "#",
       }))
     : placeholderLinks;
 

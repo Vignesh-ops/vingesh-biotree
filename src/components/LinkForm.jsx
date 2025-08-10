@@ -7,12 +7,10 @@ import InputField from "./UI/InputField";
 
 function LinkForm({ user }) {
   const dispatch = useDispatch();
-
   const [bioLinks, setBioLinks] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Fetch latest bioLinks directly from Firestore
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -26,10 +24,11 @@ function LinkForm({ user }) {
           console.log("Fetched bioLinks:", data.bioLinks);
 
           if (Array.isArray(data.bioLinks)) {
-            const formatted = data.bioLinks.map((link, idx) => ({
-              key: link.key || `link-${idx}`,
-              id: link.value?.id || "",
-              url: link.value?.url || ""
+            // Match the structure from SelectedBioitems
+            const formatted = data.bioLinks.map(link => ({
+              key: link.id, // Using platformId as key
+              id: link.id,  // Platform ID (instagram, twitter, etc)
+              url: link.url // The actual URL
             }));
             setBioLinks(formatted);
           } else {
@@ -38,6 +37,7 @@ function LinkForm({ user }) {
         }
       } catch (err) {
         console.error("Error fetching links:", err);
+        setError("Failed to load links");
       } finally {
         setLoading(false);
       }
@@ -49,84 +49,121 @@ function LinkForm({ user }) {
   const handleFieldChange = (index, field, newValue) => {
     setBioLinks(prev => {
       const updated = [...prev];
-      updated[index][field] = newValue;
+      updated[index] = {
+        ...updated[index],
+        [field]: newValue
+      };
       return updated;
     });
   };
 
   const handleAddCustomField = () => {
-    setBioLinks(prev => [...prev, { key: Date.now().toString(), id: "", url: "" }]);
+    setBioLinks(prev => [...prev, { 
+      key: `custom-${Date.now()}`, 
+      id: "", 
+      url: "" 
+    }]);
   };
 
   const saveUserProfile = async (uid, linksArr) => {
+    // Match the structure expected by SelectedBioitems
     const formattedLinks = linksArr.map(link => ({
-      key: link.key,
-      value: { id: link.id, url: link.url }
+      id: link.id,
+      url: link.url
     }));
 
-    await setDoc(doc(db, "users", uid), { bioLinks: formattedLinks }, { merge: true });
+    await setDoc(
+      doc(db, "users", uid), 
+      { bioLinks: formattedLinks }, 
+      { merge: true }
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const validLinks = bioLinks.filter(link => link.id && link.url);
+    const validLinks = bioLinks.filter(link => 
+      link.id.trim() && link.url.trim()
+    );
 
     if (validLinks.length === 0) {
-      setError("Please add at least one link.");
+      setError("Please add at least one valid link");
       return;
     }
 
-    await saveUserProfile(user.uid, validLinks);
+    try {
+      await saveUserProfile(user.uid, validLinks);
+      
+      // Dispatch to Redux if needed
+      validLinks.forEach(link => {
+        dispatch(addLink({ 
+          title: link.id, 
+          url: link.url 
+        }));
+      });
 
-    validLinks.forEach(link => {
-      dispatch(addLink({ title: link.id, url: link.url }));
-    });
-
-    setError("");
+    } catch (err) {
+      console.error("Save failed:", err);
+      setError("Failed to save links");
+    }
   };
 
   if (loading) {
-    return <p className="text-white">Loading links...</p>;
+    return <div className="text-white p-4">Loading links...</div>;
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 bg-white/10 backdrop-blur-lg shadow-lg p-4 rounded-xl border border-white/20"
+      className="space-y-4 bg-gray-800 p-6 rounded-lg border border-gray-700"
     >
-      {error && <p className="text-red-400">{error}</p>}
+      <h2 className="text-xl font-bold text-white mb-4">Edit Your Links</h2>
 
-      {bioLinks?.map((link, index) => (
-        <div key={`${link.key}-${index}`} className="flex gap-2">
-          <InputField
-            placeholder="Platform ID (e.g., instagram)"
-            value={link.id}
-            onChange={(e) => handleFieldChange(index, "id", e.target.value)}
-          />
-          <InputField
-            type="url"
-            placeholder="https://example.com"
-            value={link.url}
-            onChange={(e) => handleFieldChange(index, "url", e.target.value)}
-          />
+      {error && (
+        <p className="text-red-400 bg-red-900/30 p-2 rounded">
+          {error}
+        </p>
+      )}
+
+      {bioLinks.map((link, index) => (
+        <div key={link.key || index} className="flex gap-3">
+          <div className="flex-1">
+            <InputField
+              placeholder="Platform (instagram, twitter, etc)"
+              value={link.id}
+              onChange={(e) => handleFieldChange(index, "id", e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex-1">
+            <InputField
+              type="url"
+              placeholder="https://example.com/username"
+              value={link.url}
+              onChange={(e) => handleFieldChange(index, "url", e.target.value)}
+              className="w-full"
+            />
+          </div>
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={handleAddCustomField}
-        className="bg-blue-500 text-white px-3 py-2 rounded-md w-full"
-      >
-        ➕ Add Custom Field
-      </button>
-
-      <button
-        type="submit"
-        className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-4 py-3 rounded-lg w-full shadow-md"
-      >
-        Save Links
-      </button>
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={handleAddCustomField}
+          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+        >
+          + Add Link
+        </button>
+        
+        <button
+          type="submit"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        >
+          Save Changes
+        </button>
+      </div>
     </form>
   );
 }

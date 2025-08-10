@@ -23,18 +23,25 @@ function UserSetupWizard() {
                 theme: user.theme || '',
             });
         }
-        console.log('user',user)
+        console.log('user', user)
     }, [user]);
 
     // Determine current step based on completed fields
     useEffect(() => {
         if (!userData.username) {
+            console.log('step1')
             setCurrentStep(1);
         } else if (!userData.theme) {
+            console.log('step2')
+
             setCurrentStep(2);
         } else if (!userData.biolinks || userData.biolinks.length === 0) {
+            console.log('step2')
+
             setCurrentStep(3);
         } else {
+            console.log('step4')
+
             setCurrentStep(4);
         }
     }, [userData]);
