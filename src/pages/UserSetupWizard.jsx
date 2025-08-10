@@ -74,7 +74,7 @@ function UserSetupWizard() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto p-4">
+        <div className="max-w-3x4 mx-auto p-4">
             {currentStep === 1 && (
                 <Setuserpath
                     initialUsername={userData.username}
