@@ -46,30 +46,29 @@ export default function Header() {
           )}
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <img
-                  src={user.photoURL || "/avatar-placeholder.png"}
-                  alt="me"
-                  className="w-8 h-8 rounded-full object-cover border-2 border-purple-400 cursor-pointer"
-                />
-                {/* Dropdown */}
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg p-2 hidden group-hover:block">
-                  <Link
-                    to="/app/profile"
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 rounded"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => dispatch(signOutUser())}
-                    className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
+           <div className="relative group">
+           <img
+             src={user.photoURL || "/avatar-placeholder.png"}
+             alt="me"
+             className="w-8 h-8 rounded-full object-cover border-2 border-purple-400 cursor-pointer"
+           />
+           {/* Dropdown */}
+           <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
+             <Link
+               to="/app/profile"
+               className="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 rounded"
+             >
+               Profile
+             </Link>
+             <button
+               onClick={() => dispatch(signOutUser())}
+               className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded"
+             >
+               Logout
+             </button>
+           </div>
+         </div>
+         
           ) : (
             <Link
               to="/login"
