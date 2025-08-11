@@ -69,7 +69,7 @@ const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: null, // { uid, displayName, email, photoURL }
-    status: "idle",
+    status: "loading",
     error: null,
   },
   reducers: {
@@ -82,6 +82,13 @@ const authSlice = createSlice({
       state.user = null;
       state.status = "idle";
       state.error = null;
+    },
+    setAuthLoading: (state) => {
+      state.status = "loading";
+    },
+    setAuthError: (state, action) => {
+      state.error = action.payload;
+      state.status = "failed";
     },
   },
   extraReducers: (builder) => {
@@ -104,5 +111,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions;
+export const { setUser, clearUser,setAuthLoading, setAuthError } = authSlice.actions;
 export default authSlice.reducer;
