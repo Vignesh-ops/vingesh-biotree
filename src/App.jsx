@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import { useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -15,7 +16,7 @@ import Layout from "./components/Layout";
 import ThemeSelector from "./components/SelectedTheme"; 
 import UserSetupWizard from './pages/UserSetupWizard';
 // App.jsx
-import { useNavigate } from "react-router-dom";
+
 
 
 function App() {
@@ -29,7 +30,7 @@ function App() {
 function AppRoutes() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+const location = useLocation();
   useEffect(() => {
     dispatch(setAuthLoading());
 
@@ -68,7 +69,7 @@ function AppRoutes() {
     });
 
     return () => unsub();
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate,location.pathname]);
 
   return (
     <Routes>
