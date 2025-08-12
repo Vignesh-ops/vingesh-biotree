@@ -50,14 +50,15 @@ function AppRoutes() {
 
           dispatch(setUser(fullUser));
 
+          const allowedRedirectFrom = ["/", "/login"];
           if (
             fullUser.username &&
             fullUser.theme &&
             Array.isArray(fullUser.bioLinks) &&
-            fullUser.bioLinks.length > 0
+            fullUser.bioLinks.length > 0 &&
+            allowedRedirectFrom.includes(location.pathname)
           ) {
             navigate("/app/bio", { replace: true });
-          }
         } else {
           dispatch(clearUser());
         }
