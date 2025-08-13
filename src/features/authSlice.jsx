@@ -19,22 +19,26 @@ export const signInWithGoogle = createAsyncThunk(
       const fbUser = result.user;
 
       // Ensure user doc exists
-      const userRef = doc(db, "users", fbUser.uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
+      const profileRef = doc(db, "users", fbUser.uid, "profile", "info");
+      const profileSnap = await getDoc(profileRef);
+      if (!profileSnap.exists()) {
         const raw = (fbUser.displayName || fbUser.email || "user").toLowerCase();
-        const username = raw.replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-        await setDoc(userRef, {
-          uid: fbUser.uid,
+        const username = '';
+        await setDoc(profileRef, {
           displayName: fbUser.displayName || "",
           email: fbUser.email || "",
           photoURL: fbUser.photoURL || "",
           username,
-          bioLinks: [],
+          bio: "",
           theme: "basic",
           createdAt: serverTimestamp(),
         });
       }
+
+      // const profileRef2 = doc(db, "users", fbUser.uid, "profile", "info");
+      // if (!profileSnap.exists()) {
+
+      // }
 
       // Fetch profile right after login
       thunkAPI.dispatch(fetchUserProfile(fbUser.uid));

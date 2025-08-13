@@ -9,7 +9,7 @@ export const fetchUserProfile = createAsyncThunk(
   async (uid, thunkAPI) => {
     try {
       if (!uid) throw new Error("User ID is missing!");
-      const snap = await getDoc(doc(db, "users", uid));
+      const snap = await getDoc(doc(db, "users", uid, "profile", "info"));
       if (snap.exists()) {
         return snap.data();
       } else {
@@ -23,13 +23,10 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const saveUserProfile = createAsyncThunk(
   "user/saveUserProfile",
-  async ({ uid, ...updates }, { getState }) => {
+  async ({ uid, ...updates }) => {
     if (!uid) throw new Error("Missing user UID");
-    console.log(updates, 'updates')
-    const docRef = doc(db, "users", uid);
-    await updateDoc(docRef, updates); // partial update
-
-    // Merge into local Redux store
+    const docRef = doc(db, "users", uid, "profile", "info");
+    await updateDoc(docRef, updates);
     return updates;
   }
 );

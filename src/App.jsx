@@ -37,34 +37,40 @@ const location = useLocation();
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
         if (fbUser) {
-          const userRef = doc(db, "users", fbUser.uid);
-          const userSnap = await getDoc(userRef);
-          const userDocData = userSnap.exists() ? userSnap.data() : {};
+          
+          const profileRef = doc(db, "users", fbUser.uid, "profile", "info");
+const profileSnap = await getDoc(profileRef);
+const profileData = profileSnap.exists() ? profileSnap.data() : {};
 
           const fullUser = {
             uid: fbUser.uid,
             displayName: fbUser.displayName,
             email: fbUser.email,
             photoURL: fbUser.photoURL,
-            ...userDocData,
+            ...profileData,
           };
 
           dispatch(setUser(fullUser));
 
-          const allowedRedirectFrom = ["/", "/login"];
-          if (
-            fullUser.username &&
-            fullUser.theme &&
-            Array.isArray(fullUser.bioLinks) &&
-            fullUser.bioLinks.length > 0 &&
-            allowedRedirectFrom.includes(location.pathname)
-          ) {
-            navigate("/app/bio", { replace: true });
+          const hasProfileSetup =
+          fullUser.username &&
+          fullUser.theme &&
+          Array.isArray(fullUser.bioLinks) &&
+          fullUser.bioLinks.length > 0;
+
+        // ✅ Redirect ONLY if user has setup and is on unwanted pages
+        if (
+          hasProfileSetup &&
+          ["/", "/login", "/app/setup"].includes(location.pathname)
+        ) {
+          navigate("/app/bio", { replace: true });
+        }
         } else {
           dispatch(clearUser());
         }
       } catch (err) {
-        dispatch(setAuthError(err.message));
+        // dispatch(setAuthError(err.message));
+        console.log(err)
       }
     });
 

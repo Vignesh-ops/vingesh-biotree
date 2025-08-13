@@ -15,6 +15,7 @@ import CreatorTheme from '../components/Themes/CreatorTheme'
 import DeveloperTheme from '../components/Themes/DeveloperTheme'
 import SingerTheme from '../components/Themes/SingerTheme'
 import SportsTheme from '../components/Themes/SportsTheme'
+import {  collectionGroup} from "firebase/firestore";
 
 export default function PublicProfile() {
     const { username } = useParams();
@@ -24,47 +25,59 @@ export default function PublicProfile() {
 
     useEffect(() => {
         const load = async () => {
-            setLoading(true);
-
-            // Find user document by username
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("username", "==", username));
+          setLoading(true);
+      
+          try {
+            // 1️⃣ Search across all "profile" subcollections
+            const q = query(
+                collectionGroup(db, "info"),
+                where("username", "==", username)
+              );
+            
             const snap = await getDocs(q);
-
+            console.log(snap,'snap')
             if (snap.empty) {
-                setProfile(null);
-                setLinks([]);
-                setLoading(false);
-                return;
+              setProfile(null);
+              setLinks([]);
+              setLoading(false);
+              return;
             }
-
-            // Get the first matching document
-            const userDocSnap = snap.docs[0];
-            console.log(userDocSnap.id, 'userDocSnap')
-            const userData = userDocSnap.data();
-
-            // Store both the data and the UID (doc.id)
-            setProfile({ ...userData, uid: userDocSnap.id });
-
-            // Fetch links subcollection using doc.id instead of userData.uid
-            const linksSnap = await getDocsFromCollection(
-                collection(db, "users", userDocSnap.id, "bioLinks")
-            );
+      
+         2️⃣ Get the profile data
+            const profileDoc = snap.docs.find(doc => doc.id === "info"); // only "info" doc has data
+            if (!profileDoc) {
+              setProfile(null);
+              setLinks([]);
+              setLoading(false);
+              return;
+            }
+      
+            const profileData = profileDoc.data();
+      
+            // Extract UID from path: users/{uid}/profile/info
+            const pathSegments = profileDoc.ref.path.split("/");
+            const uid = pathSegments[1]; // "users" / {uid} / "profile" / "info"
+      
+            setProfile({ ...profileData, uid });
+      
+            // 3️⃣ Fetch links subcollection
+            const linksSnap = await getDocs(collection(db, "users", uid, "bioLinks"));
             const linksData = linksSnap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
+              id: doc.id,
+              ...doc.data(),
             }));
-            console.log('linksSnap', linksData)
-
-            setLinks(linksSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-            setLoading(false);
-            console.log('links*****', links)
-
+      
+            setLinks(linksData);
+          } catch (err) {
+            console.error("Error loading profile:", err);
+          }
+      
+          setLoading(false);
         };
-
+      
         load();
-    }, [username]);
-
+      }, [username]);
+      
     if (loading) return <div className="p-8">Loading…</div>;
     if (!profile) {
         return (
