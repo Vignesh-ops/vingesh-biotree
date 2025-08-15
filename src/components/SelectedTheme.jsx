@@ -243,11 +243,11 @@ function ThemeSelector() {
         whileHover={{ scale: isSmall ? 1.02 : 1.01, y: -2 }}
         whileTap={{ scale: 0.98 }}
         onClick={onClick}
-        className={`relative cursor-pointer rounded-xl overflow-auto transition-all ${
+        className={`relative cursor-pointer rounded-xl overflow-hidden transition-all ${
           isSelected 
             ? 'ring-4 ring-purple-500 ring-opacity-50 shadow-xl' 
             : 'hover:shadow-lg border border-gray-200'
-        } ${isSmall ? 'h-32' : 'h-48'}`}
+        } ${isSmall ? 'h-32' : 'h-auto min-h-[300px]'}`}
         style={{ backgroundColor: config.bgColor }}
       >
         {/* Preview Content */}
@@ -464,7 +464,7 @@ function ThemeSelector() {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 min-h-[500px]">
               {activeTab === 'colors' && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold mb-4">Color Settings</h3>
@@ -479,13 +479,13 @@ function ThemeSelector() {
                           type="color"
                           value={customConfig.bgColor}
                           onChange={(e) => updateConfig('bgColor', e.target.value)}
-                          className="w-12 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                          className="w-12 h-10 rounded-lg border border-gray-300 text-gray-700 cursor-pointer"
                         />
                         <input
                           type="text"
                           value={customConfig.bgColor}
                           onChange={(e) => updateConfig('bgColor', e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                           placeholder="#ffffff"
                         />
                       </div>
@@ -500,13 +500,13 @@ function ThemeSelector() {
                           type="color"
                           value={customConfig.textColor}
                           onChange={(e) => updateConfig('textColor', e.target.value)}
-                          className="w-12 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                          className="w-12 h-10 rounded-lg border border-gray-300 text-gray-700 cursor-pointer"
                         />
                         <input
                           type="text"
                           value={customConfig.textColor}
                           onChange={(e) => updateConfig('textColor', e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -520,13 +520,13 @@ function ThemeSelector() {
                           type="color"
                           value={customConfig.primaryColor}
                           onChange={(e) => updateConfig('primaryColor', e.target.value)}
-                          className="w-12 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                          className="w-12 h-10 rounded-lg border text-gray-700 border-gray-300 cursor-pointer"
                         />
                         <input
                           type="text"
                           value={customConfig.primaryColor}
                           onChange={(e) => updateConfig('primaryColor', e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-700 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -540,13 +540,13 @@ function ThemeSelector() {
                           type="color"
                           value={customConfig.accentColor}
                           onChange={(e) => updateConfig('accentColor', e.target.value)}
-                          className="w-12 h-10 rounded-lg border border-gray-300 cursor-pointer"
+                          className="w-12 h-10 rounded-lg text-gray-700 border border-gray-300 cursor-pointer"
                         />
                         <input
                           type="text"
                           value={customConfig.accentColor}
                           onChange={(e) => updateConfig('accentColor', e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          className="flex-1 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -566,7 +566,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.fontFamily}
                         onChange={(e) => updateConfig('fontFamily', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         {FONT_FAMILIES.map(font => (
                           <option key={font.value} value={font.value}>
@@ -583,7 +583,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.fontWeight}
                         onChange={(e) => updateConfig('fontWeight', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         <option value="lighter">Lighter</option>
                         <option value="normal">Normal</option>
@@ -642,7 +642,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.linkStyle}
                         onChange={(e) => updateConfig('linkStyle', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         <option value="rounded">Rounded</option>
                         <option value="square">Square</option>
@@ -657,7 +657,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.cardStyle}
                         onChange={(e) => updateConfig('cardStyle', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         <option value="flat">Flat</option>
                         <option value="elevated">Elevated</option>
@@ -674,7 +674,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.spacing}
                         onChange={(e) => updateConfig('spacing', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         <option value="compact">Compact</option>
                         <option value="comfortable">Comfortable</option>
@@ -689,7 +689,7 @@ function ThemeSelector() {
                       <select
                         value={customConfig.iconStyle}
                         onChange={(e) => updateConfig('iconStyle', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900 hover:text-gray-900"
                       >
                         <option value="outlined">Outlined</option>
                         <option value="filled">Filled</option>
@@ -706,7 +706,7 @@ function ThemeSelector() {
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-4">
               <h3 className="text-lg font-semibold">Live Preview</h3>
-              <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden h-auto">
                 <ThemePreview
                   theme={ENHANCED_THEMES[selectedTheme]}
                   config={customConfig}
