@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import LoadingSpinner, { CardSkeleton } from "../components/UI/LoadingSpinner";
 import { Copy, ExternalLink, Edit, Trash2, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import Sidebar from "../components/Sidebar";
 function Dashboard() {
   const dispatch = useDispatch();
   const { items: links, status: linksStatus } = useSelector(state => state.links);
@@ -20,7 +20,7 @@ function Dashboard() {
   const [copySuccess, setCopySuccess] = useState('');
 
   // Memoized profile URL
-  const profileUrl = useMemo(() => 
+  const profileUrl = useMemo(() =>
     user?.username ? `${window.location.origin}/${user.username}` : '',
     [user?.username]
   );
@@ -68,7 +68,7 @@ function Dashboard() {
   // Copy profile URL with feedback
   const handleCopyUrl = useCallback(async () => {
     if (!profileUrl) return;
-    
+
     try {
       await navigator.clipboard.writeText(profileUrl);
       setCopySuccess('Copied!');
@@ -91,7 +91,7 @@ function Dashboard() {
 
   // Loading states
   if (checkingProfile || authStatus === "loading") {
-    console.log('checkingProfile',checkingProfile,'authstatus',authStatus)
+    console.log('checkingProfile', checkingProfile, 'authstatus', authStatus)
     return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
   }
 
@@ -100,11 +100,14 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-4xl mx-auto p-4 space-y-8">
-        
+    // <div className="flex flex-col min-h-screen bg-gray-50">
+    // <div className="flex flex-1">
+
+    <main className="flex-1 ml-6 lg:ml-6 pt-8 pr-8 pb-8 pl-10 sm:pl-20 md:pl-10 transition-all duration-300 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-8 ">
+
         {/* Dashboard Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
@@ -116,25 +119,38 @@ function Dashboard() {
               </h1>
               <p className="text-gray-600">Manage your bio page and track your links</p>
             </div>
-            
+
             {profileUrl && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                {/* Copy Link Button - Improved Design */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCopyUrl}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${copySuccess === 'Copied!'
+                      ? 'bg-green-100 text-green-700'
+                      : copySuccess === 'Failed to copy'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
                 >
-                  <Copy size={16} />
-                  {copySuccess || 'Copy Link'}
-                </button>
-                <a
+                  <Copy size={16} className="shrink-0" />
+                  <span className="whitespace-nowrap">
+                    {copySuccess || 'Copy Link'}
+                  </span>
+                </motion.button>
+
+                {/* View Profile Button - Improved Design */}
+                <motion.a
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   href={profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-sm hover:shadow-md"
                 >
-                  <ExternalLink size={16} />
-                  View Profile
-                </a>
+                  <ExternalLink size={16} className="shrink-0" />
+                  <span className="whitespace-nowrap">View Profile</span>
+                </motion.a>
               </div>
             )}
           </div>
@@ -142,7 +158,7 @@ function Dashboard() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -157,7 +173,7 @@ function Dashboard() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -172,7 +188,7 @@ function Dashboard() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -199,7 +215,7 @@ function Dashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Manage Your Links</h2>
             <p className="text-gray-600">Add, edit, or remove links from your bio page</p>
           </div>
-          
+
           <div className="p-6">
             <LinkForm user={user} />
           </div>
@@ -216,7 +232,7 @@ function Dashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile Preview</h2>
             <p className="text-gray-600">This is how your profile appears to visitors</p>
           </div>
-          
+
           <div className="p-6">
             {linksStatus === "loading" ? (
               <CardSkeleton />
@@ -263,8 +279,10 @@ function Dashboard() {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
-    </div>
+      </div>
+    </main>
+    // </div>
+    // </div>
   );
 }
 

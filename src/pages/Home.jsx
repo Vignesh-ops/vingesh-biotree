@@ -18,11 +18,13 @@ import {
   Star
 } from "lucide-react";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
+// import Sidebar from "../components/Sidebar";
 
 // Lazy load components for better performance
 const AnimatedBackground = lazy(() => import("../components/UI/AnimatedBackground"));
 
 function Home() {
+
   const { user, status } = useSelector((state) => state.auth);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isVisible, setIsVisible] = useState({});
@@ -44,12 +46,34 @@ function Home() {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "Content Creator",
+      content: "Linkbrew transformed how I share my content. The analytics help me understand my audience better!",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616c24de9c1?w=150",
+      rating: 5
+    },
+    {
+      name: "Mike Rodriguez",
+      role: "Small Business Owner",
+      content: "The professional themes helped my business look more credible. Sales inquiries increased by 40%!",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+      rating: 5
+    },
+    {
+      name: "Jessica Park",
+      role: "Musician",
+      content: "Perfect for sharing my music across platforms. My fans love having everything in one place.",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
+      rating: 5
+    }
+  ];
   // Auto-rotate testimonials
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTestimonial(prev => (prev + 1) % testimonials.length);
-    }, 5000);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,11 +85,13 @@ function Home() {
     }
   }
 
+
   // Loading state with skeleton
   if (status === "loading") {
     return (
       <div className="min-h-screen">
         <Header />
+       
         <div className="max-w-7xl mx-auto px-4 py-20">
           <div className="animate-pulse space-y-8">
             <div className="text-center space-y-4">
@@ -128,29 +154,7 @@ function Home() {
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Content Creator",
-      content: "Linkbrew transformed how I share my content. The analytics help me understand my audience better!",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616c24de9c1?w=150",
-      rating: 5
-    },
-    {
-      name: "Mike Rodriguez",
-      role: "Small Business Owner",
-      content: "The professional themes helped my business look more credible. Sales inquiries increased by 40%!",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-      rating: 5
-    },
-    {
-      name: "Jessica Park",
-      role: "Musician",
-      content: "Perfect for sharing my music across platforms. My fans love having everything in one place.",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-      rating: 5
-    }
-  ];
+
 
   const stats = [
     { number: "10K+", label: "Active Users" },

@@ -18,6 +18,55 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Add this to your global CSS file */
+body {
+  margin-left: 64px; /* Default for collapsed sidebar */
+  transition: margin-left 0.3s ease-in-out;
+}
+
+body.sidebar-expanded {
+  margin-left: 256px;
+}
+
+/* Adjust main content padding */
+.main-content {
+  padding-left: 1rem;
+  transition: padding-left 0.3s ease-in-out;
+}
+@media (max-width: 768px) {
+  body {
+    margin-left: 0 !important;
+  }
+  
+  main, footer {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-open {
+    transform: translateX(0);
+  }
+}
+
+/* Add to your global styles */
+@media (max-width: 768px) {
+  .sidebar {
+    z-index: 50;
+  }
+  
+  .sidebar + main {
+    margin-left: 0 !important;
+  }
+  
+  /* Optional: Add mobile menu overlay */
+  .sidebar-overlay {
+    @apply fixed inset-0 bg-black/50 z-40;
+  }
+}
 a {
   font-weight: 500;
   color: #646cff;

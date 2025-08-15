@@ -24,12 +24,14 @@ function App() {
 }
 
 function AppRoutes() {
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     dispatch(setAuthLoading(true));
+   
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
