@@ -107,14 +107,17 @@ export default function PublicProfile() {
 
       try {
         // Search across all profile subcollections for username
-        const profileQuery = query(
-          collectionGroup(db, "info"),
-          where("username", "==", username)
+        const profileInfosRef = collectionGroup(db, 'info');
+        const q = query(
+          profileInfosRef,
+          where("username", "==", username.toLowerCase())
         );
-        
-        const profileSnapshot = await getDocs(profileQuery);
-        console.log('profileSnapshot',profileSnapshot)
-        if (profileSnapshot.empty) {
+        const snap = await getDocs(q);
+
+        console.log('profileSnapshot',snap)
+
+        // const profileSnapshot = await getDocs(profileQuery);
+        if (snap.empty) {
           setError("Profile not found");
           setProfile(null);
           setLoading(false);

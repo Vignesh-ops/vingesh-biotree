@@ -3,10 +3,8 @@ import { useDispatch } from "react-redux";
 import { addLink } from "../features/linkSlice";
 import { db } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import InputField from "./UI/InputField";
-import { Plus, Save, Trash2, GripVertical, ExternalLink } from "lucide-react";
+import { Plus, Save, Trash2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 function LinkForm({ user }) {
   const dispatch = useDispatch();
@@ -16,28 +14,27 @@ function LinkForm({ user }) {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [draggedItem, setDraggedItem] = useState(null);
 
+  // URL validation helper
+  const isValidUrl = useCallback((string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }, []);
 
-    // URL validation helper
-    const isValidUrl = useCallback((string) => {
-      try {
-        new URL(string);
-        return true;
-      } catch (_) {
-        return false;
-      }
-    }, []);
   // Memoized validation
   const isValidForm = useMemo(() => {
     const hasValidLinks = bioLinks.some(link => 
       link.id.trim() && link.url.trim() && isValidUrl(link.url.trim())
     );
     return bio.trim() && hasValidLinks;
-  }, [bio, bioLinks]);
+  }, [bio, bioLinks, isValidUrl]);
 
-
-
-  // Fetch profile data with better error handling
+  // Fetch profile data
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -108,16 +105,35 @@ function LinkForm({ user }) {
     setBioLinks(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Handle drag and drop reordering
-  const handleOnDragEnd = useCallback((result) => {
-    if (!result.destination) return;
+  // Native drag and drop implementation
+  const handleDragStart = useCallback((e, index) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    setDraggedItem(index);
+    e.currentTarget.style.opacity = '0.4';
+  }, []);
 
-    const items = Array.from(bioLinks);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
 
-    setBioLinks(items);
-  }, [bioLinks]);
+  const handleDrop = useCallback((e, index) => {
+    e.preventDefault();
+    const draggedIndex = Number(e.dataTransfer.getData('text/plain'));
+    if (draggedIndex === index) return;
+
+    setBioLinks(prev => {
+      const newLinks = [...prev];
+      const [removed] = newLinks.splice(draggedIndex, 1);
+      newLinks.splice(index, 0, removed);
+      return newLinks;
+    });
+  }, []);
+
+  const handleDragEnd = useCallback((e) => {
+    e.currentTarget.style.opacity = '1';
+    setDraggedItem(null);
+  }, []);
 
   // Save profile
   const handleSave = useCallback(async (silent = false) => {
@@ -204,14 +220,14 @@ function LinkForm({ user }) {
           Your Bio *
         </label>
         <textarea
-          className="w-full p-4 rounded-lg border text-gray-700  border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
+          className="w-full p-4 text-gray-700 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
           placeholder="Tell your visitors about yourself... (required)"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           rows={3}
           maxLength={500}
         />
-        <div className="text-gray-700 flex justify-between text-xs text-gray-500">
+        <div className="flex justify-between text-xs text-gray-500">
           <span>A compelling bio helps visitors connect with you</span>
           <span>{bio.length}/500</span>
         </div>
@@ -233,104 +249,117 @@ function LinkForm({ user }) {
           </button>
         </div>
 
-        <DragDropContext onDragEnd={handleOnDragEnd}>
-          <Droppable droppableId="bioLinks">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                <AnimatePresence>
-                  {bioLinks.map((link, index) => (
-                    <Draggable key={link.key} draggableId={link.key} index={index}>
-                      {(provided, snapshot) => (
-                        <motion.div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          className={`flex gap-3 p-4 bg-gray-50 rounded-lg border-2 transition-all ${
-                            snapshot.isDragging 
-                              ? 'border-purple-300 shadow-lg' 
-                              : 'border-transparent hover:border-gray-200'
-                          }`}
-                        >
-                          <div
-                            {...provided.dragHandleProps}
-                            className="flex items-center text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-                          >
-                            <GripVertical size={16} />
-                          </div>
-                          
-                          <div className="flex-1 space-y-2">
-                            <div className="flex gap-3">
-                              <div className="flex-1">
-                                <input
-                                  type="text"
-                                  placeholder="Platform name (e.g., Instagram)"
-                                  value={link.id}
-                                  onChange={(e) => handleFieldChange(index, "id", e.target.value)}
-                                  className="w-full text-gray-400  px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <input
-                                  type="url"
-                                  placeholder="https://example.com/your-profile"
-                                  value={link.url}
-                                  onChange={(e) => handleFieldChange(index, "url", e.target.value)}
-                                  className={`w-full px-3 py-2 border text-gray-400  rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                                    link.error ? 'border-red-300' : 'border-gray-300'
-                                  }`}
-                                />
-                              </div>
-                            </div>
-                            
-                            {link.error && (
-                              <p className="text-sm text-red-600">{link.error}</p>
-                            )}
-                            
-                            {link.url && isValidUrl(link.url) && (
-                              <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                              >
-                                <ExternalLink size={12} />
-                                Test link
-                              </a>
-                            )}
-                          </div>
-                          
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveLink(index)}
-                            className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </motion.div>
-                      )}
-                    </Draggable>
-                  ))}
-                </AnimatePresence>
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <div className="space-y-3">
+          <AnimatePresence>
+            {bioLinks.map((link, index) => (
+              <motion.div
+                key={link.key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ 
+                  opacity: 1, 
+                  y: 0,
+                  backgroundColor: draggedItem === index ? 'rgba(236, 253, 245, 0.5)' : 'rgba(249, 250, 251, 1)'
+                }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className={`flex gap-3 p-4 rounded-lg border-2 transition-all ${
+                  draggedItem === index 
+                    ? 'border-emerald-300 shadow-lg' 
+                    : 'border-transparent hover:border-gray-200'
+                }`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <div
+                  className="flex items-center text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                >
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="9" cy="12" r="1"></circle>
+                    <circle cx="9" cy="5" r="1"></circle>
+                    <circle cx="9" cy="19" r="1"></circle>
+                    <circle cx="15" cy="12" r="1"></circle>
+                    <circle cx="15" cy="5" r="1"></circle>
+                    <circle cx="15" cy="19" r="1"></circle>
+                  </svg>
+                </div>
+                
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        placeholder="Platform name (e.g., Instagram)"
+                        value={link.id}
+                        onChange={(e) => handleFieldChange(index, "id", e.target.value)}
+                        className="w-full text-gray-700 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="url"
+                        placeholder="https://example.com/your-profile"
+                        value={link.url}
+                        onChange={(e) => handleFieldChange(index, "url", e.target.value)}
+                        className={`w-full text-gray-700 px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                          link.error ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  
+                  {link.error && (
+                    <p className="text-sm text-red-600">{link.error}</p>
+                  )}
+                  
+                  {link.url && isValidUrl(link.url) && (
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-gray-700 gap-1 text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      <ExternalLink size={12} />
+                      Test link
+                    </a>
+                  )}
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLink(index)}
+                  className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-        {bioLinks.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p className="mb-2">No links added yet</p>
-            <button
-              onClick={handleAddCustomField}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-            >
-              <Plus size={16} />
-              Add Your First Link
-            </button>
-          </div>
-        )}
+          {bioLinks.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p className="mb-2">No links added yet</p>
+              <button
+                onClick={handleAddCustomField}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              >
+                <Plus size={16} />
+                Add Your First Link
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Save Button */}
@@ -370,7 +399,7 @@ function LinkForm({ user }) {
       >
         <h4 className="font-medium text-blue-900 mb-2">💡 Pro Tips:</h4>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Use descriptive names for your links (e.g., "My YouTube Channel" instead of "YouTube")</li>
+          <li>• Use descriptive names for your links</li>
           <li>• Drag and drop to reorder your links by importance</li>
           <li>• Test your links to make sure they work correctly</li>
           <li>• Keep your bio concise but engaging</li>
