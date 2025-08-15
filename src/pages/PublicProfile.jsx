@@ -107,7 +107,7 @@ export default function PublicProfile() {
 
       try {
         // Search across all profile subcollections for username
-        const profileInfosRef = collectionGroup(db, 'info');
+        const profileInfosRef = collection(db, "users");
         const q = query(
           profileInfosRef,
           where("username", "==", username.toLowerCase())
@@ -125,7 +125,7 @@ export default function PublicProfile() {
         }
 
         // Get the profile document
-        const profileDoc = profileSnapshot.docs[0];
+        const profileDoc = snap.docs[0];
         const profileData = profileDoc.data();
 
         // Extract UID from document path

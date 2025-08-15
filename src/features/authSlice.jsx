@@ -60,7 +60,7 @@ export const signInWithGoogle = createAsyncThunk(
       }
 
       // Check if profile exists, create if not
-      const profileRef = doc(db, "users", fbUser.uid, "profile","info");
+      const profileRef = doc(db, "users", fbUser.uid);
       let profileData = {};
       
       try {
@@ -148,7 +148,7 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('User not authenticated');
       }
 
-      const profileRef = doc(db, "users", uid, "profile", "info");
+      const profileRef = doc(db, "users", uid);
       await updateDoc(profileRef, {
         ...updates,
         updatedAt: serverTimestamp(),

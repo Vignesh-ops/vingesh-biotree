@@ -35,7 +35,7 @@ function AppRoutes() {
       try {
         if (fbUser) {
           // Fixed: Proper Firestore structure
-          const profileRef = doc(db, "users", fbUser.uid, "profile", "info");
+          const profileRef = doc(db, "users", fbUser.uid);
           const profileSnap = await getDoc(profileRef);
           const profileData = profileSnap.exists() ? profileSnap.data() : {};
 

@@ -41,7 +41,7 @@ function LinkForm({ user }) {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const profileRef = doc(db, "users", user.uid, "profile", "info");
+        const profileRef = doc(db, "users", user.uid);
         const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists()) {
@@ -150,7 +150,7 @@ function LinkForm({ user }) {
       setSaving(true);
       setError("");
 
-      const profileRef = doc(db, "users", user.uid, "profile", "info");
+      const profileRef = doc(db, "users", user.uid);
       await setDoc(profileRef, {
         bio: bio.trim(),
         bioLinks: validLinks.map(link => ({

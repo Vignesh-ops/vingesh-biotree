@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { collectionGroup, query,serverTimestamp, where, getDocs, setDoc, doc } from "firebase/firestore";
+import { collection, query,serverTimestamp, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase"; // adjust path
 
 function Setuserpath({ email, onComplete, user }) {
@@ -9,16 +9,14 @@ function Setuserpath({ email, onComplete, user }) {
     try {
       if (!uname || uname.length < 3) return false;
   
-      // Query all profile info documents across users
-      const profileInfosRef = collectionGroup(db, 'info');
-      const q = query(
-        profileInfosRef,
-        where("username", "==", uname.toLowerCase())
-      );
-
+      // Query directly in 'users' collection
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("username", "==", uname.toLowerCase()));
+  
       const snap = await getDocs(q);
-      console.log('snap',snap)
-
+      console.log('snap', snap);
+  
+      // If at least 1 document matches, username exists
       return !snap.empty;
       
     } catch (error) {
@@ -38,7 +36,7 @@ function Setuserpath({ email, onComplete, user }) {
     try {
       console.log('uid',uid)
       // Correct path with even segments
-      const profileRef = doc(db, "users", uid, "profile", "info");
+      const profileRef = doc(db, "users", uid);
       console.log('profileRef',profileRef)
       await setDoc(profileRef, {
         username: uname,
