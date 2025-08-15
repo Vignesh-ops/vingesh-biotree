@@ -1,34 +1,68 @@
 import { useState } from "react";
-import { collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
+import { collectionGroup, query,serverTimestamp, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase"; // adjust path
 
 function Setuserpath({ email, onComplete, user }) {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
-
   const checkUsernameExists = async (uname) => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("username", "==", uname));
-    const snap = await getDocs(q);
-    return !snap.empty;
+    try {
+      if (!uname || uname.length < 3) return false;
+  
+      // Query all profile info documents across users
+      const profileInfosRef = collectionGroup(db, 'info');
+      const q = query(
+        profileInfosRef,
+        where("username", "==", uname.toLowerCase())
+      );
+
+      const snap = await getDocs(q);
+      console.log('snap',snap)
+
+      return !snap.empty;
+      
+    } catch (error) {
+      console.error("Error checking username:", error);
+      return true; // Fail-safe to prevent duplicates
+    }
   };
 
+  // const saveUserProfile = async (uid, uname, socials = {}) => {
+  //   await setDoc(doc(db, "users", uid,"profile", "info"), {
+  //     username: uname,
+  //     ...socials,
+  //   }, { merge: true });
+  // };
+
   const saveUserProfile = async (uid, uname, socials = {}) => {
-    await setDoc(doc(db, "users", uid), {
-      username: uname,
-      ...socials,
-    }, { merge: true });
+    try {
+      console.log('uid',uid)
+      // Correct path with even segments
+      const profileRef = doc(db, "users", uid, "profile", "info");
+      console.log('profileRef',profileRef)
+      await setDoc(profileRef, {
+        username: uname,
+        email: user.email, // Include email from props
+        createdAt: serverTimestamp(), // Add timestamp
+        updatedAt: serverTimestamp(),
+        ...socials,
+      }, { merge: true });
+      
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      throw error; // Re-throw to handle in calling function
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (username.trim().length < 3) {
       setError("Username must be at least 3 characters");
       return;
     }
 
     const exists = await checkUsernameExists(username);
+
     if (exists && username !== user.username) {
       setError("Username already taken. Please choose another.");
       return;

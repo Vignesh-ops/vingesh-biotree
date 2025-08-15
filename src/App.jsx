@@ -1,28 +1,24 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
-import { useNavigate, useLocation } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
-import { setUser, clearUser,setAuthLoading } from "./features/authSlice";
+import { setUser, clearUser, setAuthLoading } from "./features/authSlice";
 import { doc, getDoc } from "firebase/firestore";
-// import AppRoutes from "./AppRoutes"; // keep routing in separate file or below
 import Login from "./pages/Login";
 import PublicProfile from "./pages/PublicProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import ThemeSelector from "./components/SelectedTheme"; 
 import UserSetupWizard from './pages/UserSetupWizard';
-// App.jsx
-
-
+import LoadingSpinner from './components/UI/LoadingSpinner';
 
 function App() {
   return (
     <Router>
-      <AppRoutes /> {/* ✅ now inside Router */}
+      <AppRoutes />
     </Router>
   );
 }
@@ -30,17 +26,18 @@ function App() {
 function AppRoutes() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-const location = useLocation();
+  const location = useLocation();
+
   useEffect(() => {
-    dispatch(setAuthLoading());
+    dispatch(setAuthLoading(true));
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
         if (fbUser) {
-          
+          // Fixed: Proper Firestore structure
           const profileRef = doc(db, "users", fbUser.uid, "profile", "info");
-const profileSnap = await getDoc(profileRef);
-const profileData = profileSnap.exists() ? profileSnap.data() : {};
+          const profileSnap = await getDoc(profileRef);
+          const profileData = profileSnap.exists() ? profileSnap.data() : {};
 
           const fullUser = {
             uid: fbUser.uid,
@@ -52,34 +49,40 @@ const profileData = profileSnap.exists() ? profileSnap.data() : {};
 
           dispatch(setUser(fullUser));
 
+          // Fixed: Better profile completion check
           const hasProfileSetup =
-          fullUser.username &&
-          fullUser.theme &&
-          Array.isArray(fullUser.bioLinks) &&
-          fullUser.bioLinks.length > 0;
+            fullUser.username &&
+            fullUser.theme &&
+            fullUser.bio &&
+            Array.isArray(fullUser.bioLinks) &&
+            fullUser.bioLinks.length > 0;
 
-        // ✅ Redirect ONLY if user has setup and is on unwanted pages
-        if (
-          hasProfileSetup &&
-          ["/", "/login", "/app/setup"].includes(location.pathname)
-        ) {
-          navigate("/app/bio", { replace: true });
-        }
+          // Fixed: Proper redirect logic
+          if (hasProfileSetup && ["/", "/login"].includes(location.pathname)) {
+            navigate("/app/bio", { replace: true });
+          } else if (!hasProfileSetup && location.pathname.startsWith("/app") && !location.pathname.includes("/setup")) {
+            navigate("/app/setup", { replace: true });
+          }
         } else {
           dispatch(clearUser());
+          if (location.pathname.startsWith("/app")) {
+            navigate("/login", { replace: true });
+          }
         }
       } catch (err) {
-        // dispatch(setAuthError(err.message));
-        console.log(err)
+        console.error("Auth state change error:", err);
+        dispatch(clearUser());
+      } finally {
+        dispatch(setAuthLoading(false));
       }
     });
 
     return () => unsub();
-  }, [dispatch, navigate,location.pathname]);
+  }, [dispatch, navigate, location.pathname]);
 
   return (
     <Routes>
-      <Route index path="/" element={<Home />} />
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route
         path="/app"
@@ -95,6 +98,8 @@ const profileData = profileSnap.exists() ? profileSnap.data() : {};
         <Route path="setup" element={<UserSetupWizard />} />
       </Route>
       <Route path="/:username" element={<PublicProfile />} />
+      {/* 404 Route */}
+      <Route path="*" element={<div className="p-8 text-center">Page not found</div>} />
     </Routes>
   );
 }
