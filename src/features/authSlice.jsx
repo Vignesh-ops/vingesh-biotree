@@ -40,6 +40,7 @@ export const signInWithGoogle = createAsyncThunk(
   "auth/signInWithGoogle",
   async (_, { dispatch, rejectWithValue }) => {
     try {
+      // Initialize auth if needed
       await initializeAuth();
       
       const provider = new GoogleAuthProvider();
@@ -55,46 +56,53 @@ export const signInWithGoogle = createAsyncThunk(
       const result = await signInWithPopup(auth, provider);
       const fbUser = result.user;
 
-      if (!fbUser) {
+      if (!fbUser || !fbUser.uid) {
         throw new Error('No user data received from Google');
       }
 
       // Check if profile exists, create if not
       const profileRef = doc(db, "users", fbUser.uid);
-      let profileData = {};
+      const profileSnap = await getDoc(profileRef);
       
-      try {
-        const profileSnap = await getDoc(profileRef);
-        
-        if (profileSnap.exists()) {
-          profileData = profileSnap.data();
-          
-          // Update last login time
-          await updateDoc(profileRef, {
-            lastLoginAt: serverTimestamp(),
-            photoURL: fbUser.photoURL || profileData.photoURL || "",
-          });
-        } else {
-          // Create new profile
-          const newProfileData = {
-            displayName: fbUser.displayName || "",
-            email: fbUser.email || "",
-            photoURL: fbUser.photoURL || "",
-            username: "",
-            bio: "",
-            theme: "basic",
-            bioLinks: [],
-            createdAt: serverTimestamp(),
-            lastLoginAt: serverTimestamp(),
-            profileComplete: false,
-          };
-          
-          await setDoc(profileRef, newProfileData);
-          profileData = newProfileData;
+      const defaultProfileData = {
+        displayName: fbUser.displayName || "",
+        email: fbUser.email || "",
+        photoURL: fbUser.photoURL || "",
+        username: "", // You'd need to implement this
+        bio: "",
+        theme: "basic",
+        bioLinks: [],
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
+        profileComplete: false,
+        themeConfig: {
+          bgColor: "#ffffff",
+          textColor: "#000000",
+          primaryColor: "#4285f4", // Google blue
+          accentColor: "#34a853", // Google green
+          fontFamily: "Roboto, sans-serif",
+          fontWeight: "normal",
+          fontStyle: "normal",
+          headingSize: "24px",
+          textSize: "16px",
+          iconStyle: "filled",
+          iconColor: "inherit",
+          linkStyle: "underline",
+          darkMode: false,
+          bgImage: null
         }
-      } catch (firestoreError) {
-        console.error('Firestore error:', firestoreError);
-        throw new Error('Failed to access user profile data');
+      };
+
+      if (profileSnap.exists()) {
+        // Update existing profile
+        await updateDoc(profileRef, {
+          lastLoginAt: serverTimestamp(),
+          photoURL: fbUser.photoURL || profileSnap.data().photoURL || "",
+          displayName: fbUser.displayName || profileSnap.data().displayName || ""
+        });
+      } else {
+        // Create new profile
+        await setDoc(profileRef, defaultProfileData);
       }
 
       // Fetch complete user profile
@@ -106,15 +114,20 @@ export const signInWithGoogle = createAsyncThunk(
         email: fbUser.email,
         photoURL: fbUser.photoURL,
         emailVerified: fbUser.emailVerified,
-        ...profileData,
+        ...(profileSnap.exists() ? profileSnap.data() : defaultProfileData)
       };
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Handle specific errors differently if needed
+      if (error.code === 'auth/popup-closed-by-user') {
+        return rejectWithValue('Sign-in was canceled');
+      }
+      
       return rejectWithValue(getErrorMessage(error));
     }
   }
 );
-
 // Enhanced sign out
 export const signOutUser = createAsyncThunk(
   "auth/signOutUser",

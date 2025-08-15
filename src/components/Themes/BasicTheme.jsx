@@ -1,32 +1,126 @@
 import { motion } from 'framer-motion';
-import { ExternalLink, MapPin, Calendar, Users } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { ExternalLink, MapPin, Calendar, Users, Star } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
 
 export default function BasicTheme({ profile }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [linkClicks, setLinkClicks] = useState({});
 
-  const Links = profile?.bioLinks || [];
+  const links = profile?.bioLinks || [];
   const displayName = profile.displayName || profile.username || "Anonymous User";
   const bio = profile.bio || "This user hasn't written a bio yet.";
+  
+  // Get theme configuration with fallbacks
+  const themeConfig = useMemo(() => ({
+    bgColor: "#ffffff",
+    textColor: "#1f2937",
+    primaryColor: "#8b5cf6",
+    accentColor: "#ec4899",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    headingSize: "28px",
+    textSize: "16px",
+    iconStyle: "outlined",
+    iconColor: "inherit",
+    linkStyle: "rounded",
+    darkMode: false,
+    bgImage: null,
+    cardStyle: "elevated",
+    spacing: "comfortable",
+    ...(profile?.themeConfig || {})
+  }), [profile?.themeConfig]);
+
+  // Calculate spacing based on config
+  const spacingClasses = useMemo(() => {
+    const spacing = themeConfig.spacing;
+    return {
+      container: spacing === 'compact' ? 'py-8' : spacing === 'spacious' ? 'py-16' : 'py-12',
+      section: spacing === 'compact' ? 'mb-6' : spacing === 'spacious' ? 'mb-12' : 'mb-8',
+      links: spacing === 'compact' ? 'space-y-2' : spacing === 'spacious' ? 'space-y-6' : 'space-y-4'
+    };
+  }, [themeConfig.spacing]);
+
+  // Calculate card styles based on config
+  const getCardStyles = useCallback((isLink = false, index = 0) => {
+    const baseStyles = {
+      borderRadius: themeConfig.linkStyle === 'square' ? '8px' : 
+                    themeConfig.linkStyle === 'pill' ? '50px' : '12px',
+      fontFamily: themeConfig.fontFamily,
+      fontWeight: themeConfig.fontWeight,
+      fontStyle: themeConfig.fontStyle
+    };
+
+    let specificStyles = {};
+    
+    switch (themeConfig.cardStyle) {
+      case 'flat':
+        specificStyles = {
+          backgroundColor: isLink ? themeConfig.primaryColor : 'rgba(255,255,255,0.9)',
+          border: `2px solid ${isLink ? 'transparent' : themeConfig.primaryColor + '30'}`,
+          boxShadow: 'none'
+        };
+        break;
+      case 'elevated':
+        specificStyles = {
+          backgroundColor: isLink ? themeConfig.primaryColor : 'rgba(255,255,255,0.95)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          border: 'none'
+        };
+        break;
+      case 'gradient':
+        const colors = index % 2 === 0 ? 
+          [themeConfig.primaryColor, themeConfig.accentColor] :
+          [themeConfig.accentColor, themeConfig.primaryColor];
+        specificStyles = {
+          background: isLink ? 
+            `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)` :
+            'rgba(255,255,255,0.95)',
+          border: 'none',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        };
+        break;
+      case 'glass':
+        specificStyles = {
+          backgroundColor: isLink ? 
+            `${themeConfig.primaryColor}20` : 
+            'rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${isLink ? themeConfig.primaryColor : 'rgba(255,255,255,0.2)'}`,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        };
+        break;
+      case 'neon':
+        specificStyles = {
+          backgroundColor: isLink ? themeConfig.primaryColor : 'rgba(0,0,0,0.8)',
+          border: `2px solid ${themeConfig.primaryColor}`,
+          boxShadow: `0 0 20px ${themeConfig.primaryColor}40, inset 0 0 20px ${themeConfig.primaryColor}10`
+        };
+        break;
+      default:
+        specificStyles = {
+          backgroundColor: isLink ? themeConfig.primaryColor : 'rgba(255,255,255,0.95)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          border: 'none'
+        };
+    }
+
+    return { ...baseStyles, ...specificStyles };
+  }, [themeConfig]);
 
   // Track link clicks for analytics
   const handleLinkClick = useCallback(async (linkId, url) => {
-    // Update local state for immediate feedback
     setLinkClicks(prev => ({
       ...prev,
       [linkId]: (prev[linkId] || 0) + 1
     }));
 
-    // Track click in analytics (implement based on your analytics solution)
     try {
-      // Example: await trackLinkClick(profile.uid, linkId);
       console.log(`Link clicked: ${linkId} -> ${url}`);
     } catch (error) {
       console.error('Failed to track link click:', error);
     }
 
-    // Open link
     window.open(url, '_blank', 'noopener,noreferrer');
   }, [profile?.uid]);
 
@@ -79,26 +173,61 @@ export default function BasicTheme({ profile }) {
     }
   };
 
+  // Dynamic background styles
+  const backgroundStyles = useMemo(() => {
+    const baseStyle = {
+      backgroundColor: themeConfig.bgColor,
+      color: themeConfig.textColor,
+      fontFamily: themeConfig.fontFamily,
+      minHeight: '100vh'
+    };
+
+    if (themeConfig.bgImage) {
+      return {
+        ...baseStyle,
+        backgroundImage: `url(${themeConfig.bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      };
+    }
+
+    if (themeConfig.darkMode) {
+      return {
+        ...baseStyle,
+        background: `linear-gradient(135deg, ${themeConfig.bgColor} 0%, ${themeConfig.textColor}10 100%)`
+      };
+    }
+
+    return {
+      ...baseStyle,
+      background: `linear-gradient(135deg, ${themeConfig.bgColor} 0%, ${themeConfig.primaryColor}05 100%)`
+    };
+  }, [themeConfig]);
+
   return (
     <motion.div 
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 flex flex-col items-center font-sans"
+      style={backgroundStyles}
+      className="flex flex-col items-center relative"
     >
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #8B5CF6 0%, transparent 50%),
-                           radial-gradient(circle at 75% 75%, #EC4899 0%, transparent 50%)`
-        }}></div>
-      </div>
+      {/* Background overlay for better text readability */}
+      {themeConfig.bgImage && (
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundColor: `${themeConfig.bgColor}${themeConfig.darkMode ? '95' : '90'}`
+          }}
+        />
+      )}
 
-      <div className="relative z-10 w-full max-w-md mx-auto px-6 py-12">
+      <div className={`relative z-10 w-full max-w-md mx-auto px-6 ${spacingClasses.container}`}>
         {/* Profile Header */}
         <motion.div 
           variants={itemVariants}
-          className="text-center mb-8"
+          className={`text-center ${spacingClasses.section}`}
         >
           <div className="relative mb-6">
             <motion.div
@@ -108,7 +237,12 @@ export default function BasicTheme({ profile }) {
                 opacity: imageLoaded ? 1 : 0.8 
               }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-32 h-32 mx-auto rounded-full bg-white shadow-xl overflow-hidden border-4 border-white relative"
+              className="w-32 h-32 mx-auto rounded-full overflow-hidden relative"
+              style={{
+                ...getCardStyles(false),
+                border: `4px solid ${themeConfig.primaryColor}`,
+                boxShadow: `0 0 30px ${themeConfig.primaryColor}30`
+              }}
             >
               <img
                 src={profile.photoURL || "/avatar-placeholder.png"}
@@ -118,17 +252,42 @@ export default function BasicTheme({ profile }) {
                 loading="lazy"
               />
               {!imageLoaded && (
-                <div className="absolute inset-0 bg-gray-200 animate-pulse"></div>
+                <div 
+                  className="absolute inset-0 animate-pulse"
+                  style={{ backgroundColor: `${themeConfig.primaryColor}20` }}
+                />
               )}
             </motion.div>
             
-            {/* Online indicator */}
-            <div className="absolute bottom-2 right-1/2 transform translate-x-1/2 translate-y-1/2 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-lg"></div>
+            {/* Online/Verified indicator */}
+            {profile.verified ? (
+              <div 
+                className="absolute bottom-2 right-1/2 transform translate-x-1/2 translate-y-1/2 w-6 h-6 rounded-full shadow-lg flex items-center justify-center"
+                style={{ backgroundColor: themeConfig.accentColor }}
+              >
+                <Star size={12} color="white" fill="white" />
+              </div>
+            ) : (
+              <div 
+                className="absolute bottom-2 right-1/2 transform translate-x-1/2 translate-y-1/2 w-6 h-6 rounded-full shadow-lg"
+                style={{
+                  backgroundColor: '#10b981',
+                  border: `4px solid ${themeConfig.bgColor}`
+                }}
+              />
+            )}
           </div>
 
           <motion.h1 
             variants={itemVariants}
-            className="text-3xl font-bold mb-3 text-gray-900"
+            className="font-bold mb-3"
+            style={{
+              fontSize: themeConfig.headingSize,
+              color: themeConfig.textColor,
+              fontFamily: themeConfig.fontFamily,
+              fontWeight: themeConfig.fontWeight,
+              fontStyle: themeConfig.fontStyle
+            }}
           >
             {displayName}
           </motion.h1>
@@ -136,16 +295,24 @@ export default function BasicTheme({ profile }) {
           {profile.location && (
             <motion.div 
               variants={itemVariants}
-              className="flex items-center justify-center gap-1 text-gray-600 mb-2"
+              className="flex items-center justify-center gap-1 mb-2"
+              style={{ color: `${themeConfig.textColor}80` }}
             >
               <MapPin size={16} />
-              <span className="text-sm">{profile.location}</span>
+              <span style={{ fontSize: themeConfig.textSize }}>
+                {profile.location}
+              </span>
             </motion.div>
           )}
 
           <motion.p 
             variants={itemVariants}
-            className="text-gray-700 leading-relaxed max-w-sm mx-auto"
+            className="leading-relaxed max-w-sm mx-auto"
+            style={{
+              color: `${themeConfig.textColor}90`,
+              fontSize: themeConfig.textSize,
+              fontFamily: themeConfig.fontFamily
+            }}
           >
             {bio}
           </motion.p>
@@ -154,18 +321,39 @@ export default function BasicTheme({ profile }) {
           {profile.stats && (
             <motion.div 
               variants={itemVariants}
-              className="flex justify-center gap-6 mt-6 pt-6 border-t border-gray-200"
+              className="flex justify-center gap-6 mt-6 pt-6"
+              style={{ borderTop: `1px solid ${themeConfig.textColor}20` }}
             >
               {profile.stats.followers && (
                 <div className="text-center">
-                  <div className="font-bold text-lg text-gray-900">{profile.stats.followers}</div>
-                  <div className="text-xs text-gray-500">Followers</div>
+                  <div 
+                    className="font-bold text-lg"
+                    style={{ color: themeConfig.textColor }}
+                  >
+                    {profile.stats.followers}
+                  </div>
+                  <div 
+                    className="text-xs"
+                    style={{ color: `${themeConfig.textColor}60` }}
+                  >
+                    Followers
+                  </div>
                 </div>
               )}
               {profile.stats.posts && (
                 <div className="text-center">
-                  <div className="font-bold text-lg text-gray-900">{profile.stats.posts}</div>
-                  <div className="text-xs text-gray-500">Posts</div>
+                  <div 
+                    className="font-bold text-lg"
+                    style={{ color: themeConfig.textColor }}
+                  >
+                    {profile.stats.posts}
+                  </div>
+                  <div 
+                    className="text-xs"
+                    style={{ color: `${themeConfig.textColor}60` }}
+                  >
+                    Posts
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -175,10 +363,10 @@ export default function BasicTheme({ profile }) {
         {/* Links Section */}
         <motion.div 
           variants={itemVariants}
-          className="space-y-4"
+          className={spacingClasses.links}
         >
-          {Links.length > 0 ? (
-            Links.map((link, index) => (
+          {links.length > 0 ? (
+            links.map((link, index) => (
               <motion.div
                 key={`${link.id}-${index}`}
                 variants={linkVariants}
@@ -188,21 +376,46 @@ export default function BasicTheme({ profile }) {
               >
                 <button
                   onClick={() => handleLinkClick(link.id, link.url)}
-                  className="w-full bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-purple-300 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-200"
+                  className="w-full p-4 transition-all duration-300 focus:outline-none focus:ring-4"
+                  style={{
+                    ...getCardStyles(true, index),
+                    color: themeConfig.cardStyle === 'glass' || themeConfig.cardStyle === 'neon' ? 
+                      themeConfig.textColor : 'white',
+                    fontSize: themeConfig.textSize,
+                    focusRingColor: `${themeConfig.primaryColor}40`
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">
+                      <div 
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{
+                          backgroundColor: themeConfig.cardStyle === 'glass' || themeConfig.cardStyle === 'neon' ?
+                            `${themeConfig.primaryColor}30` : 'rgba(255,255,255,0.2)'
+                        }}
+                      >
+                        <span 
+                          className="font-bold text-sm"
+                          style={{
+                            color: themeConfig.cardStyle === 'glass' || themeConfig.cardStyle === 'neon' ?
+                              themeConfig.primaryColor : 'white'
+                          }}
+                        >
                           {link.id.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="text-left">
-                        <div className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
+                        <div 
+                          className="font-semibold transition-colors"
+                          style={{ fontFamily: themeConfig.fontFamily }}
+                        >
                           {link.id}
                         </div>
                         {linkClicks[link.id] && (
-                          <div className="text-xs text-gray-500">
+                          <div 
+                            className="text-xs opacity-75"
+                            style={{ fontSize: `calc(${themeConfig.textSize} * 0.75)` }}
+                          >
                             {linkClicks[link.id]} click{linkClicks[link.id] !== 1 ? 's' : ''}
                           </div>
                         )}
@@ -210,7 +423,7 @@ export default function BasicTheme({ profile }) {
                     </div>
                     <ExternalLink 
                       size={16} 
-                      className="text-gray-400 group-hover:text-purple-500 transition-colors" 
+                      className="opacity-60 group-hover:opacity-100 transition-opacity" 
                     />
                   </div>
                 </button>
@@ -219,11 +432,29 @@ export default function BasicTheme({ profile }) {
           ) : (
             <motion.div 
               variants={itemVariants}
-              className="text-center py-12 px-6 bg-white/50 rounded-xl border-2 border-dashed border-gray-300"
+              className="text-center py-12 px-6 rounded-xl border-2 border-dashed"
+              style={{
+                borderColor: `${themeConfig.textColor}30`,
+                backgroundColor: `${themeConfig.bgColor}50`
+              }}
             >
               <div className="text-4xl mb-4">🔗</div>
-              <h3 className="font-semibold text-gray-900 mb-2">No links yet</h3>
-              <p className="text-gray-600 text-sm">This user hasn't added any links to share.</p>
+              <h3 
+                className="font-semibold mb-2"
+                style={{
+                  color: themeConfig.textColor,
+                  fontSize: themeConfig.textSize,
+                  fontFamily: themeConfig.fontFamily
+                }}
+              >
+                No links yet
+              </h3>
+              <p 
+                className="text-sm"
+                style={{ color: `${themeConfig.textColor}60` }}
+              >
+                This user hasn't added any links to share.
+              </p>
             </motion.div>
           )}
         </motion.div>
@@ -233,15 +464,27 @@ export default function BasicTheme({ profile }) {
           variants={itemVariants}
           className="mt-12 text-center"
         >
-          <div className="text-xs text-gray-500 flex items-center justify-center gap-2">
+          <div 
+            className="text-xs flex items-center justify-center gap-2"
+            style={{ color: `${themeConfig.textColor}50` }}
+          >
             <Calendar size={12} />
-            <span>Joined {profile.createdAt ? new Date(profile.createdAt.seconds * 1000).toLocaleDateString() : 'recently'}</span>
+            <span>
+              Joined {profile.createdAt ? 
+                new Date(profile.createdAt.seconds * 1000).toLocaleDateString() : 
+                'recently'}
+            </span>
           </div>
           
           {profile.verified && (
-            <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              Verified Profile
+            <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs">
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: themeConfig.accentColor }}
+              />
+              <span style={{ color: themeConfig.accentColor }}>
+                Verified Profile
+              </span>
             </div>
           )}
         </motion.div>
@@ -254,7 +497,13 @@ export default function BasicTheme({ profile }) {
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 1, duration: 0.3 }}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 z-20"
+          className="fixed bottom-6 right-6 w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 z-20"
+          style={{
+            backgroundColor: themeConfig.primaryColor,
+            '&:hover': {
+              backgroundColor: themeConfig.accentColor
+            }
+          }}
         >
           <span className="text-lg">✏️</span>
         </motion.a>
