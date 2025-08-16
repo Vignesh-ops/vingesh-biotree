@@ -30,7 +30,7 @@ const Layout = () => {
                     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8 min-h-auto">
                         <Outlet />
                     </div>
-                    <Footer />
+                    {/* <Footer /> */}
                 </main>
             </div>
         </div>
