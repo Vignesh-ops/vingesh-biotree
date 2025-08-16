@@ -17,7 +17,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
   const navLinks = [
     { name: "Home", to: "/", icon: Home, description: "Return to homepage" },
     { name: "Dashboard", to: "/app/bio", icon: LayoutDashboard, description: "Manage your bio page" },
-    { name: "Showcase Products", to: "/app/addproduct", icon: LinkIcon, description: "Manage your links" },
+    { name: "Products", to: "/app/addproduct", icon: LinkIcon, description: "Manage your links" },
     { name: "Themes", to: "/app/biotheme", icon: Palette, description: "Customize appearance" },
     { name: "Profile", to: "/app/profile", icon: User, description: "Edit your profile" },
   ];
