@@ -14,7 +14,7 @@ import Layout from "./components/Layout";
 import EnhancedThemeSelector from "./components/EnhancedThemeSelector"; 
 import EnhancedUserSetupWizard from './pages/EnhancedUserSetupWizard';
 import LoadingSpinner from './components/UI/LoadingSpinner';
-// import BioLinkPage from "./components/BioLinkPage";
+import ProfileManagement from "./components/ProfileManagement";
 function App() {
   return (
     <Router>
@@ -98,7 +98,7 @@ function AppRoutes() {
         <Route path="bio" element={<Dashboard />} />
         <Route path="biotheme" element={<EnhancedThemeSelector />} />
         <Route path="setup" element={<EnhancedUserSetupWizard />} />
-        {/* <Route path="links" element={<BioLinkPage />} /> */}
+        <Route path="profile" element={<ProfileManagement />} />
       </Route>
       <Route path="/:username" element={<PublicProfile />} />
       {/* 404 Route */}
