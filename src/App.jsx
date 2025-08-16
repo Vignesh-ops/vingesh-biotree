@@ -7,14 +7,14 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { setUser, clearUser, setAuthLoading } from "./features/authSlice";
 import { doc, getDoc } from "firebase/firestore";
+import { Suspense } from 'react';
 import Login from "./pages/Login";
+const EnhancedThemeSelector = React.lazy(() => import('./components/EnhancedThemeSelector'))
 import PublicProfile from "./pages/PublicProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
-import EnhancedThemeSelector from "./components/EnhancedThemeSelector"; 
-import EnhancedUserSetupWizard from './pages/EnhancedUserSetupWizard';
-import LoadingSpinner from './components/UI/LoadingSpinner';
-import ProfileManagement from "./components/ProfileManagement";
+const EnhancedUserSetupWizard = React.lazy(() => import('./pages/EnhancedUserSetupWizard'))
+const ProfileManagement = React.lazy(() => import('./components/ProfileManagement'))
 function App() {
   return (
     <Router>
@@ -31,7 +31,7 @@ function AppRoutes() {
 
   useEffect(() => {
     dispatch(setAuthLoading(true));
-   
+
 
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       try {
@@ -82,7 +82,7 @@ function AppRoutes() {
     return () => unsub();
   }, [dispatch, navigate, location.pathname]);
 
-   return (
+  return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -96,9 +96,22 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="bio" element={<Dashboard />} />
-        <Route path="biotheme" element={<EnhancedThemeSelector />} />
-        <Route path="setup" element={<EnhancedUserSetupWizard />} />
-        <Route path="profile" element={<ProfileManagement />} />
+        <Route path="biotheme" element={
+          <Suspense fallback=''>
+            <EnhancedThemeSelector />
+          </Suspense>
+        } />
+        <Route path="setup" element={
+          <Suspense fallback=''>
+            <EnhancedUserSetupWizard />
+          </Suspense>
+
+        } />
+        <Route path="profile" element={
+          <Suspense fallback=''>
+            <ProfileManagement />
+          </Suspense>
+        } />
       </Route>
       <Route path="/:username" element={<PublicProfile />} />
       {/* 404 Route */}

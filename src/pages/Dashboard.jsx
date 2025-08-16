@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import LoadingSpinner, { CardSkeleton } from "../components/UI/LoadingSpinner";
 import { Copy, ExternalLink, Edit, Trash2, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "../components/Sidebar";
 function Dashboard() {
   const dispatch = useDispatch();
   const { items: links, status: linksStatus } = useSelector(state => state.links);
@@ -90,10 +89,10 @@ function Dashboard() {
   }, [dispatch]);
 
   // Loading states
-  if (checkingProfile || authStatus === "loading") {
-    console.log('checkingProfile', checkingProfile, 'authstatus', authStatus)
-    return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
-  }
+  // if (checkingProfile || authStatus === "loading") {
+  //   console.log('checkingProfile', checkingProfile, 'authstatus', authStatus)
+  //   return <LoadingSpinner fullScreen text="Loading your dashboard..." />;
+  // }
 
   if (!user) {
     return <LoadingSpinner fullScreen text="Please sign in to continue" />;
