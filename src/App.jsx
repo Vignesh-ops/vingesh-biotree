@@ -11,8 +11,8 @@ import Login from "./pages/Login";
 import PublicProfile from "./pages/PublicProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
-import ThemeSelector from "./components/SelectedTheme"; 
-import UserSetupWizard from './pages/UserSetupWizard';
+import EnhancedThemeSelector from "./components/EnhancedThemeSelector"; 
+import EnhancedUserSetupWizard from './pages/EnhancedUserSetupWizard';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 
 function App() {
@@ -82,7 +82,7 @@ function AppRoutes() {
     return () => unsub();
   }, [dispatch, navigate, location.pathname]);
 
-  return (
+   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
@@ -96,8 +96,8 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="bio" element={<Dashboard />} />
-        <Route path="biotheme" element={<ThemeSelector />} />
-        <Route path="setup" element={<UserSetupWizard />} />
+        <Route path="biotheme" element={<EnhancedThemeSelector />} />
+        <Route path="setup" element={<EnhancedUserSetupWizard />} />
       </Route>
       <Route path="/:username" element={<PublicProfile />} />
       {/* 404 Route */}
