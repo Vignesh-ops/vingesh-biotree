@@ -162,6 +162,8 @@ export const updateUserProfile = createAsyncThunk(
       }
 
       const profileRef = doc(db, "users", uid);
+      console.log('Update',profileRef,'dat====>',updates)
+
       await updateDoc(profileRef, {
         ...updates,
         updatedAt: serverTimestamp(),

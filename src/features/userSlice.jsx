@@ -24,6 +24,7 @@ export const fetchUserProfile = createAsyncThunk(
 export const saveUserProfile = createAsyncThunk(
   "user/saveUserProfile",
   async ({ uid, ...updates }) => {
+    console.log('save',uid,'dat====>',updates)
     if (!uid) throw new Error("Missing user UID");
     const docRef = doc(db, "users", uid);
     await updateDoc(docRef, updates);

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector, useDispatch } from 'react-redux'; // Added missing Redux imports
 import { collection, query, serverTimestamp, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { saveUserProfile } from '../features/userSlice'; // Import the action
+import { updateUserProfile } from '../features/authSlice'; // Import auth action
 import {
     User,
     Link,
@@ -20,15 +23,7 @@ import {
     Music,
     Github,
     Twitch,
-    // Discord,  // Not available in some Lucide versions
-    // TikTok,   // Not available in some Lucide versions
-    // Snapchat, // Not available in some Lucide versions
     Facebook,
-    // Pinterest,
-    // Dribbble, // Not available in some Lucide versions
-    // Behance,  // Not available in some Lucide versions
-    // Spotify,
-    // SoundCloud,
     Plus,
     X,
     ExternalLink,
@@ -38,11 +33,13 @@ import {
     Sparkles,
     Rocket, Camera, Circle, Layers
 } from 'lucide-react';
-const Discord = MessageCircle; // Using MessageCircle as Discord alternative
-const TikTok = Music;         // Using Music as TikTok alternative
-const Snapchat = Camera;      // Would need to import Camera if available
-const Dribbble = Circle;      // Would need to import Circle if available
+
+const Discord = MessageCircle;
+const TikTok = Music;
+const Snapchat = Camera;
+const Dribbble = Circle;
 const Behance = Layers;
+
 // Enhanced social platforms with better categorization and icons
 const SOCIAL_PLATFORMS = {
     social: {
@@ -56,7 +53,6 @@ const SOCIAL_PLATFORMS = {
             { id: 'tiktok', name: 'TikTok', icon: TikTok, color: 'bg-gradient-to-br from-black to-gray-800', placeholder: 'https://tiktok.com/@username' },
             { id: 'snapchat', name: 'Snapchat', icon: Snapchat, color: 'bg-gradient-to-br from-yellow-400 to-yellow-600', placeholder: 'https://snapchat.com/add/username' },
             { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: 'bg-gradient-to-br from-blue-600 to-blue-800', placeholder: 'https://linkedin.com/in/username' },
-            //   { id: 'pinterest', name: 'Pinterest', icon: Pinterest, color: 'bg-gradient-to-br from-red-500 to-red-700', placeholder: 'https://pinterest.com/username' }
         ]
     },
     content: {
@@ -66,8 +62,6 @@ const SOCIAL_PLATFORMS = {
         platforms: [
             { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-gradient-to-br from-red-600 to-red-700', placeholder: 'https://youtube.com/@username' },
             { id: 'twitch', name: 'Twitch', icon: Twitch, color: 'bg-gradient-to-br from-purple-600 to-purple-800', placeholder: 'https://twitch.tv/username' },
-            //   { id: 'spotify', name: 'Spotify', icon: Spotify, color: 'bg-gradient-to-br from-green-500 to-green-700', placeholder: 'https://open.spotify.com/artist/...' },
-            //   { id: 'soundcloud', name: 'SoundCloud', icon: SoundCloud, color: 'bg-gradient-to-br from-orange-500 to-orange-700', placeholder: 'https://soundcloud.com/username' },
             { id: 'music', name: 'Apple Music', icon: Music, color: 'bg-gradient-to-br from-red-500 to-pink-600', placeholder: 'https://music.apple.com/...' }
         ]
     },
@@ -136,6 +130,7 @@ const ENHANCED_THEMES = {
 };
 
 const UserSetupFlow = () => {
+    const dispatch = useDispatch(); // Added dispatch
     const { user } = useSelector(state => state.auth);
     const [currentStep, setCurrentStep] = useState(1);
     const [userData, setUserData] = useState({
@@ -145,52 +140,45 @@ const UserSetupFlow = () => {
         theme: 'minimal'
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [saving, setSaving] = useState(false); // Added missing state
 
     // Step 1: Username Setup
     const UsernameStep = () => {
         const [username, setUsername] = useState('');
         const [isChecking, setIsChecking] = useState(false);
         const [isAvailable, setIsAvailable] = useState(null);
+        
         const checkUsernameExists = async (uname) => {
             try {
                 if (!uname || uname.length < 3) return false;
 
-                // Query directly in 'users' collection
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("username", "==", uname.toLowerCase()));
-
                 const snap = await getDocs(q);
-                console.log('snap', snap);
-
-                // If at least 1 document matches, username exists
+                
                 return !snap.empty;
-
             } catch (error) {
                 console.error("Error checking username:", error);
-                return true; // Fail-safe to prevent duplicates
+                return true;
             }
         };
-        console.log('username')
-        const checkUsername = async (uname) => {
 
+        const checkUsername = async (uname) => {
             if (!uname || uname.length < 3) {
                 setIsAvailable(null);
                 return false;
-
             }
+            
             setIsChecking(true);
-            // Query directly in 'users' collection
             const exists = await checkUsernameExists(uname);
-
+            setIsChecking(false);
+            
             if (exists) {
-                setIsAvailable(false)
+                setIsAvailable(false);
                 return;
             } else {
-                setIsChecking(false);
-                setIsAvailable(true)
+                setIsAvailable(true);
             }
-            // If at least 1 document matches, username exists
-
         };
 
         useEffect(() => {
@@ -308,6 +296,7 @@ const UserSetupFlow = () => {
                     return [...prev, platform];
                 }
             });
+            console.log('selectedPlatforms',selectedPlatforms)
         };
 
         const updateLinkData = (platformId, url) => {
@@ -594,27 +583,56 @@ const UserSetupFlow = () => {
     // Step 4: Preview & Complete
     const PreviewStep = () => {
         const handleComplete = async () => {
+            if (!user?.uid) {
+                alert('User not authenticated. Please sign in again.');
+                return;
+            }
+
             setIsLoading(true);
-            // Simulate API call
-            // await new Promise(resolve => setTimeout(resolve, 2000));
+            setSaving(true);
+            
             try {
-                setSaving(true);
-                await dispatch(saveUserProfile({
-                    uid: user.uid,
-                    theme: selectedTheme,
-                    themeConfig: customConfig
-                })).unwrap();
+                // Prepare the data to save
+                let biodto = userData.selectedPlatforms
+                const biopayload = biodto.map(({ icon, ...rest }) => rest);
+                console.log('biopayload',biopayload)
+                const profileData = {
+                    username: userData.username,
+                    bio: userData.bio,
+                    theme: userData.theme,
+                    bioLinks: biopayload, // Save the selected platforms as bioLinks
+                    profileComplete: true,
+                    themeConfig: {
+                        ...ENHANCED_THEMES[userData.theme].preview,
+                        name: ENHANCED_THEMES[userData.theme].name,
+                        description: ENHANCED_THEMES[userData.theme].description,
+                        category: ENHANCED_THEMES[userData.theme].category
+                    },
+                    updatedAt: serverTimestamp()
+                };
+
+                // Save to both user profile and auth
+                await Promise.all([
+                   
+                    dispatch(updateUserProfile({
+                        ...profileData
+                    })).unwrap()
+                ]);
 
                 // Show success feedback
-                setTimeout(() => setSaving(false), 1000);
-                alert('Profile created successfully! Redirecting to dashboard...');
+                setTimeout(() => {
+                    setSaving(false);
+                    setIsLoading(false);
+                    // You can navigate to dashboard here
+                    navigate('/app/bio');
+                }, 1000);
 
             } catch (error) {
-                console.error('Failed to save theme:', error);
+                console.error('Failed to save profile:', error);
                 setSaving(false);
+                setIsLoading(false);
+                alert(`Failed to save profile: ${error.message || 'Unknown error'}`);
             }
-            setIsLoading(false);
-            // Navigate to dashboard
         };
 
         const selectedTheme = ENHANCED_THEMES[userData.theme];

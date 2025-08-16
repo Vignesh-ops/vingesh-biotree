@@ -6,29 +6,31 @@ import {
   query,
   where,
   getDocs,
-  collectionGroup,
   doc,
   updateDoc,
   increment
 } from "firebase/firestore";
-import BasicTheme from '../components/Themes/BasicTheme';
-import BusinessTheme from '../components/Themes/BusinessTheme';
-import CreatorTheme from '../components/Themes/CreatorTheme';
-import DeveloperTheme from '../components/Themes/DeveloperTheme';
-import SingerTheme from '../components/Themes/SingerTheme';
-import SportsTheme from '../components/Themes/SportsTheme';
-import LoadingSpinner from '../components/UI/LoadingSpinner';
 import { motion } from 'framer-motion';
 import { Share2, Heart } from 'lucide-react';
+import { 
+  MinimalTheme, 
+  DarkTheme, 
+  GradientTheme, 
+  NeonTheme, 
+  OceanTheme, 
+  CottonTheme, 
+  SunsetTheme 
+} from '../components/Themes';
 
-// Theme component mapping for better performance
+// Theme component mapping
 const THEME_COMPONENTS = {
-  basic: BasicTheme,
-  creator: CreatorTheme,
-  business: BusinessTheme,
-  sports: SportsTheme,
-  singer: SingerTheme,
-  developer: DeveloperTheme,
+  minimal: MinimalTheme,
+  dark: DarkTheme,
+  gradient: GradientTheme,
+  neon: NeonTheme,
+  ocean: OceanTheme,
+  cotton: CottonTheme,
+  sunset: SunsetTheme,
 };
 
 export default function PublicProfile() {
@@ -40,7 +42,7 @@ export default function PublicProfile() {
 
   // Memoized theme component selection
   const ThemeComponent = useMemo(() => {
-    return THEME_COMPONENTS[profile?.theme] || BasicTheme;
+    return THEME_COMPONENTS[profile?.theme] || MinimalTheme;
   }, [profile?.theme]);
 
   // Track profile view (analytics)
@@ -55,17 +57,7 @@ export default function PublicProfile() {
       });
       setViewTracked(true);
     } catch (error) {
-      // Create analytics document if it doesn't exist
-      try {
-        await setDoc(analyticsRef, {
-          totalViews: 1,
-          lastViewedAt: new Date(),
-          createdAt: new Date(),
-        });
-        setViewTracked(true);
-      } catch (createError) {
-        console.error("Failed to track view:", createError);
-      }
+      console.error("Failed to track view:", error);
     }
   }, [viewTracked]);
 
@@ -78,22 +70,18 @@ export default function PublicProfile() {
       try {
         await navigator.share({ title, url });
       } catch (error) {
-        // Fallback to clipboard
         await navigator.clipboard.writeText(url);
-        // You could show a toast here
       }
     } else {
-      // Fallback to clipboard
       try {
         await navigator.clipboard.writeText(url);
-        // You could show a toast here
       } catch (error) {
         console.error("Failed to copy to clipboard:", error);
       }
     }
   }, [profile]);
 
-  // Load profile data with better error handling and performance
+  // Load profile data
   useEffect(() => {
     const loadProfile = async () => {
       if (!username) {
@@ -106,7 +94,6 @@ export default function PublicProfile() {
       setError(null);
 
       try {
-        // Search across all profile subcollections for username
         const profileInfosRef = collection(db, "users");
         const q = query(
           profileInfosRef,
@@ -114,9 +101,6 @@ export default function PublicProfile() {
         );
         const snap = await getDocs(q);
 
-        console.log('profileSnapshot',snap)
-
-        // const profileSnapshot = await getDocs(profileQuery);
         if (snap.empty) {
           setError("Profile not found");
           setProfile(null);
@@ -124,25 +108,27 @@ export default function PublicProfile() {
           return;
         }
 
-        // Get the profile document
         const profileDoc = snap.docs[0];
         const profileData = profileDoc.data();
+        const uid = profileDoc.id;
 
-        // Extract UID from document path
-        const pathSegments = profileDoc.ref.path.split("/");
-        const uid = pathSegments[1];
+        // Format bioLinks to match theme component expectations
+        const formattedBioLinks = profileData.bioLinks?.map(link => ({
+          id: link.id,
+          url: link.url,
+          name: link.id.charAt(0).toUpperCase() + link.id.slice(1), // Capitalize first letter
+          icon: () => <span>{link.id.charAt(0).toUpperCase()}</span> // Simple fallback icon
+        })) || [];
 
         const enrichedProfile = {
           ...profileData,
           uid,
-          // Add SEO-friendly data
+          bioLinks: formattedBioLinks,
           metaTitle: `${profileData.displayName || profileData.username} - Bio Links`,
           metaDescription: profileData.bio || `Check out ${profileData.displayName || profileData.username}'s links and content`,
         };
 
         setProfile(enrichedProfile);
-
-        // Track view asynchronously
         setTimeout(() => trackProfileView(uid), 1000);
 
       } catch (err) {
@@ -161,7 +147,6 @@ export default function PublicProfile() {
     if (profile) {
       document.title = profile.metaTitle;
       
-      // Update meta description
       let metaDescription = document.querySelector('meta[name="description"]');
       if (!metaDescription) {
         metaDescription = document.createElement('meta');
@@ -170,7 +155,6 @@ export default function PublicProfile() {
       }
       metaDescription.content = profile.metaDescription;
 
-      // Add Open Graph tags for better social sharing
       const ogTags = [
         { property: 'og:title', content: profile.metaTitle },
         { property: 'og:description', content: profile.metaDescription },
@@ -190,22 +174,19 @@ export default function PublicProfile() {
       });
     }
 
-    // Cleanup function
     return () => {
       document.title = 'Linkbrew - Create Your Bio Page';
     };
   }, [profile]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-        <LoadingSpinner size="large" text="Loading profile..." />
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
   }
 
-  // Error state with better UX
   if (error || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -241,10 +222,16 @@ export default function PublicProfile() {
     );
   }
 
-  // Render the appropriate theme component
+  // Prepare userProfile object for theme components
+  const userProfile = {
+    username: profile.username,
+    displayName: profile.displayName,
+    bio: profile.bio,
+    photoURL: profile.photoURL
+  };
+
   return (
     <div className="relative">
-      {/* Share Button - Fixed position */}
       <button
         onClick={handleShare}
         className="fixed top-4 right-4 z-10 p-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 group"
@@ -253,22 +240,22 @@ export default function PublicProfile() {
         <Share2 size={20} className="text-gray-600 group-hover:text-purple-600" />
       </button>
 
-      {/* Analytics tracking pixel (invisible) */}
       <div 
         className="absolute w-1 h-1 opacity-0 pointer-events-none"
         data-profile-view={profile.uid}
       />
 
-      {/* Theme Component */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <ThemeComponent profile={profile} />
+        <ThemeComponent 
+          userProfile={userProfile} 
+          bioLinks={profile.bioLinks} 
+        />
       </motion.div>
 
-      {/* Powered by footer (optional) */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
         <a
           href="/"
